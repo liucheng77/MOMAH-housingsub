@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Housing Subsidy Copilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              obsidian: "#0A0A0B",
+              emerald: "#10B981",
+              gold: "#F59E0B",
+            },
+            fontFamily: {
+              serif: ['"Playfair Display"', 'serif'],
+              sans: ['"Inter"', 'sans-serif'],
+            },
+          }
+        }
+      }
+    </script>
+    <style>
+      :root { background-color: #0A0A0B; color: white; }
+      body { margin: 0; font-family: 'Inter', sans-serif; }
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: #0A0A0B; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #262626; border-radius: 10px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
