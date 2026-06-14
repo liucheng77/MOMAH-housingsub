@@ -1,7 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { 
-  Users, 
-  ShieldCheck, 
   BarChart3, 
   FileText, 
   Cpu,
