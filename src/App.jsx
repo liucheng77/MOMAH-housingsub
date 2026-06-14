@@ -1,0 +1,955 @@
+import React, { useState, useMemo, useEffect, useRef, createContext, useContext } from "react";
+import * as RC from "recharts";
+
+/* =========================================================================
+   DATA LAYER  — all figures anchored to BRD V0.5.1 and internally consistent.
+   See README.md for the rigor notes / sources.
+   ========================================================================= */
+const BRD = {
+  eligibleFamilies: 1400000,          // >1.4M families passed eligibility
+  baseline: { contracts:127952, spendSAR:18098000000, avgPerContract:141444 }, // 2024–2025/07
+  phase3BudgetSAR: 7900000000,        // ~7.9B over 5y
+  phase3Years: 5,
+  targetContractsTotal: 510000,       // 2026–2030
+  targetBreakdown: { redf:310000, zatca:150000, devHousing:50000 },
+  hbrBaseline: 0.405,                 // 40–41%
+  hbrTarget2030: 0.325,               // 30–35%
+  ownershipNow: 0.6624, ownershipTarget: 0.70,
+  fairnessThreshold: 1.0,
+};
+const ANNUAL_CONTRACTS = Math.round(BRD.targetContractsTotal / BRD.phase3Years); // 102000
+
+// Income bands. NOTE: this engine works in the PHASE-3 FLEXIBLE-BUDGET frame
+// (7.9B / 510k contracts ⇒ avg support ≈ 15.5k/contract). The historical 141,444/contract
+// (18.098B / 127,952) is a *different basis* (total support incl. package/loan) and is shown
+// only as a historical context card — never mixed into the optimization math.
+// Calibration targets: ~64% of contracts to >10k · weighted avg support ≈ 17.4k · FG_base ≈ 0.70 · HBR_base ≈ 0.405.
+// Above-10k bands are deliberately OVER-subsidised (BRD pain point: budget diverted to the less needy),
+// so rationalising/reallocating them yields genuine savings.
+// Two support instruments per BRD (kept as separate, documented sub-models):
+//   subsidyBase – the FLEXIBLE-budget line (drives spend / savings / fairness), avg ≈ 17.4k
+//   pkgBase     – the PACKAGE / effective buy-down support (drives HBR), avg ≈ 130k
+// >10k bands are over-served on both instruments (BRD pain point).
+const BANDS = [
+  { id:"b1", key:"lt5",    below:true,  incomeAvg:4200,  popShare:0.15, cShareBase:0.08, subsidyBase:15000, pkgBase:95000,  homePrice:470000 },
+  { id:"b2", key:"5to8",   below:true,  incomeAvg:6600,  popShare:0.20, cShareBase:0.14, subsidyBase:15800, pkgBase:105000, homePrice:560000 },
+  { id:"b3", key:"8to10",  below:true,  incomeAvg:9000,  popShare:0.18, cShareBase:0.14, subsidyBase:16500, pkgBase:115000, homePrice:650000 },
+  { id:"b4", key:"10to13", below:false, incomeAvg:11500, popShare:0.20, cShareBase:0.26, subsidyBase:18800, pkgBase:150000, homePrice:790000 },
+  { id:"b5", key:"13to16", below:false, incomeAvg:14500, popShare:0.15, cShareBase:0.22, subsidyBase:20500, pkgBase:160000, homePrice:930000 },
+  { id:"b6", key:"gt16",   below:false, incomeAvg:18500, popShare:0.12, cShareBase:0.16, subsidyBase:22500, pkgBase:170000, homePrice:1180000 },
+];
+// HBR (mortgage-burden) model: monthly payment on (price − downpayment − package buy-down) / income.
+const MORT = { rate:0.073/12, n:300, down:0.10 };   // 7.3% APR, 25y, 10% down (calibrated to HBR_base≈40.5%)
+const HBR_LEV = { boost:2.5, cap:0.6 };             // leverage of boost/cap on package support
+function monthlyPayment(P){ const r=MORT.rate,n=MORT.n; return P<=0?0:P*r/(1-Math.pow(1+r,-n)); }
+
+// 13 administrative regions of Saudi Arabia (eligible-base weights sum to 1; FG varies by region).
+const REGIONS = [
+  { key:"riyadh",   w:0.255, priceIdx:1.18, fg:0.74 },
+  { key:"makkah",   w:0.210, priceIdx:1.22, fg:0.69 },
+  { key:"eastern",  w:0.155, priceIdx:1.10, fg:0.81 },
+  { key:"madinah",  w:0.075, priceIdx:1.02, fg:0.88 },
+  { key:"asir",     w:0.058, priceIdx:0.90, fg:1.04 },
+  { key:"qassim",   w:0.045, priceIdx:0.94, fg:0.97 },
+  { key:"tabuk",    w:0.030, priceIdx:0.88, fg:1.08 },
+  { key:"hail",     w:0.026, priceIdx:0.86, fg:1.11 },
+  { key:"jazan",    w:0.043, priceIdx:0.84, fg:1.06 },
+  { key:"najran",   w:0.020, priceIdx:0.85, fg:1.09 },
+  { key:"bahah",    w:0.016, priceIdx:0.83, fg:1.12 },
+  { key:"jawf",     w:0.017, priceIdx:0.84, fg:1.10 },
+  { key:"northern", w:0.050, priceIdx:0.87, fg:1.05 },
+];
+
+const DATA_SOURCES = [
+  { key:"sakani",  status:"ok",      quality:96, freq:"daily",     records:1402360, delta:0.4,  completeness:98, updated:"Today 06:00" },
+  { key:"redf",    status:"ok",      quality:93, freq:"daily",     records:318540,  delta:1.2,  completeness:95, updated:"Today 05:30" },
+  { key:"nhc",     status:"ok",      quality:90, freq:"weekly",    records:84210,   delta:-0.6, completeness:91, updated:"2 days ago" },
+  { key:"rega",    status:"pending", quality:88, freq:"monthly",   records:51300,   delta:0.3,  completeness:88, updated:"Last month" },
+  { key:"ncsi",    status:"delayed", quality:84, freq:"quarterly", records:540000,  delta:0.1,  completeness:86, updated:"1 quarter ago" },
+  { key:"sama",    status:"ok",      quality:95, freq:"daily",     records:1250,    delta:0.0,  completeness:99, updated:"Today 06:00" },
+];
+
+/* =========================================================================
+   WHAT-IF / FORMULA ENGINE
+   params:
+     reallocatePct  – fraction of >10k contract share shifted to <10k bands (0..0.30)
+     capHighPct     – reduction applied to subsidy of top two bands (0..0.20)
+     boostLowPct    – uplift applied to subsidy of <10k bands (0..0.20)
+   ========================================================================= */
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+
+function computeAllocation(params){
+  const p = Object.assign({ reallocatePct:0, capHighPct:0, boostLowPct:0, offPlanPct:0 }, params||{});
+  const belowIdx = BANDS.map((b,i)=>b.below?i:-1).filter(i=>i>=0);
+  const aboveIdx = BANDS.map((b,i)=>!b.below?i:-1).filter(i=>i>=0);
+
+  // Total annual contracts kept constant (the 510k/5y target is non-negotiable).
+  // reallocatePct shifts that fraction of the >10k contract share down to <10k bands, pro-rata.
+  const baseAboveTotal = aboveIdx.reduce((s,i)=>s+BANDS[i].cShareBase,0);
+  const moved = baseAboveTotal * p.reallocatePct;
+  const belowBaseTotal = belowIdx.reduce((s,i)=>s+BANDS[i].cShareBase,0);
+
+  const rows = BANDS.map((b)=>{
+    let cShare = b.cShareBase;
+    if(b.below)  cShare = b.cShareBase + moved*(b.cShareBase/belowBaseTotal);
+    else         cShare = b.cShareBase*(1 - p.reallocatePct);
+    let subsidy = b.subsidyBase;
+    if(b.below) subsidy = b.subsidyBase*(1+p.boostLowPct);
+    else        subsidy = subsidy*(1-p.capHighPct);          // cap applies to all >10k bands
+    subsidy = subsidy*(1 - p.offPlanPct);                    // off-plan / in-kind restriction (flat — savings lever, FG/HBR neutral)
+    return Object.assign({}, b, { cShare, subsidy });
+  });
+
+  const contractsTotal = ANNUAL_CONTRACTS;
+  let spend=0, subsidyBelow=0, subsidyTotal=0;
+  let hbrNum=0, hbrDen=0;
+  rows.forEach(r=>{
+    const contracts = contractsTotal*r.cShare;
+    const bandSpend = contracts*r.subsidy;
+    spend += bandSpend; subsidyTotal += bandSpend;
+    if(r.below) subsidyBelow += bandSpend;
+    r.contracts = contracts; r.bandSpend = bandSpend;
+    // HBR: package buy-down reduces mortgage principal → lowers monthly payment → lowers burden.
+    let pkg = r.pkgBase;
+    if(r.below) pkg = r.pkgBase*(1 + p.boostLowPct*HBR_LEV.boost);
+    else        pkg = r.pkgBase*(1 - p.capHighPct*HBR_LEV.cap);
+    const principal = r.homePrice*(1-MORT.down) - pkg;
+    const hbr = clamp(monthlyPayment(principal)/r.incomeAvg, 0.08, 0.70);
+    r.hbr = hbr; r.pkg = pkg;
+    hbrNum += hbr*r.popShare; hbrDen += r.popShare;
+  });
+  const avgPerContract = spend/contractsTotal;
+  const popBelow = belowIdx.reduce((s,i)=>s+BANDS[i].popShare,0);
+  const popTotal = BANDS.reduce((s,b)=>s+b.popShare,0);
+  const FG = (subsidyBelow/subsidyTotal) / (popBelow/popTotal);
+  const HBR = hbrNum/hbrDen;
+
+  return { rows, spend, avgPerContract, FG, HBR, subsidyBelow, subsidyTotal, contractsTotal,
+           fgShareBelow:subsidyBelow/subsidyTotal, popShareBelow:popBelow/popTotal };
+}
+
+const BASELINE = computeAllocation({}); // current matrix (all sliders = 0)
+
+// Savings are measured against the current matrix (BASELINE). BRD frames savings as
+// 1.37–3.4B over the 5-year phase (≈17–43% of the 7.9B budget).
+function scenarioSavings(scn){
+  const annual = BASELINE.spend - scn.spend;
+  return { annual, phase: annual*BRD.phase3Years,
+           pctOfBudget: (annual*BRD.phase3Years)/BRD.phase3BudgetSAR };
+}
+
+function fgByRegion(globalFG){
+  // scale each region's baseline FG by the same ratio the global FG moved
+  const ratio = globalFG / BASELINE.FG;
+  return REGIONS.map(r=>({ key:r.key, fg:+(r.fg*ratio).toFixed(3), w:r.w, priceIdx:r.priceIdx }));
+}
+
+/* =========================================================================
+   FORECAST (12-month spend projection with budget ceiling + alert)
+   ========================================================================= */
+function buildForecast(scn){
+  const annualCeiling = BRD.phase3BudgetSAR / BRD.phase3Years; // 1.58B
+  const monthlyCeiling = annualCeiling/12;
+  const monthlyAvg = scn.spend/12;
+  const months=[];
+  let cum=0;
+  for(let m=1;m<=12;m++){
+    const seasonal = 1 + 0.12*Math.sin((m/12)*Math.PI*2 - 0.6); // mild seasonality
+    const projected = monthlyAvg*seasonal;
+    cum += projected;
+    months.push({ m, projected:Math.round(projected), cumulative:Math.round(cum),
+      ceiling:Math.round(monthlyCeiling*m) });
+  }
+  const alertMonth = months.find(x=>x.cumulative > monthlyCeiling*x.m*0.70);
+  return { months, annualCeiling, alertMonth: alertMonth? alertMonth.m : null };
+}
+
+/* =========================================================================
+   i18n  (English + Arabic).  Switching AR flips the whole app to RTL.
+   ========================================================================= */
+const I18N = {
+  en:{
+    appName:"Dynamic Subsidy Allocation & Optimization",
+    ministry:"Ministry of Municipalities & Housing", agency:"Housing Support Agency",
+    syntheticData:"Synthetic demo data — not real beneficiaries",
+    login:"Sign in", username:"Username", password:"Password", chooseRole:"Select a demo identity",
+    loginHint:"Password is pre-filled for the demo (no real authentication).", enter:"Enter",
+    logout:"Sign out", language:"Language", currency:"Currency", resetDemo:"Reset demo",
+    // roles
+    analyst:"Analyst", owner:"Business Owner", minister:"Minister",
+    analyst_full:"Housing Support Analyst", owner_full:"Business Owner (Executive)", minister_full:"His Excellency the Minister",
+    analyst_desc:"Runs analyses, What-if, assembles & submits decision packages.",
+    owner_desc:"Reviews and approves tactical recommendations.",
+    minister_desc:"Adjudicates strategic items (caps / internal regulations).",
+    // nav
+    nav_home:"Home", nav_data:"Data Readiness", nav_alloc:"Allocation Plan", nav_forecast:"Forecast & Fairness",
+    nav_whatif:"What-if Simulation", nav_packages:"Decision Packages", nav_approvals:"Approvals",
+    nav_audit:"Audit Trail", nav_copilot:"Housing Copilot", nav_cockpit:"Strategic Cockpit", nav_decisions:"Strategic Decisions",
+    // KPIs
+    kpi_savings:"Projected savings (5-yr)", kpi_fairness:"Fairness Gap", kpi_hbr:"Housing Burden (HBR)",
+    kpi_budget:"Budget utilisation", kpi_contracts:"Contracts to target", kpi_pending:"Pending decisions",
+    kpi_forecastErr:"Forecast error", kpi_dataReady:"Data readiness", kpi_adoption:"Adoption rate",
+    of_budget:"of 7.9B budget", target:"target", baseline:"baseline", current:"current",
+    fair_if:"Fair when ≥ 1.0", toTarget:"to 2030 target 30–35%",
+    // common
+    explain:"View rationale", impact:"Projected impact", submit:"Assemble & submit package", approve:"Approve",
+    reject:"Reject & feedback", escalate:"Escalate to Minister", adjudicate:"Adjudicate", view:"View",
+    run:"Run", running:"Running…", done:"Done", apply:"Apply", todo:"To-do", status:"Status",
+    region:"Region", incomeBand:"Income band", contracts:"Contracts", subsidy:"Avg support", share:"Share",
+    before:"Before", after:"After", delta:"Change", scenario:"Scenario", recommended:"Recommended",
+    notifTitle:"Decision package submitted", noItems:"Nothing here yet.",
+    // data sources
+    src_sakani:"Sakani Platform", src_redf:"Real Estate Dev. Fund (REDF)", src_nhc:"National Housing Co. (NHC)",
+    src_rega:"Real Estate Authority (Rega)", src_ncsi:"Statistics Authority (NCSI)", src_sama:"Central Bank (SAMA)",
+    st_ok:"Updated", st_pending:"Pending approval", st_delayed:"Delayed 3–6 mo", quality:"Quality", freq:"Frequency",
+    // bands
+    bl_lt5:"< 5,000", bl_5to8:"5,000–8,000", bl_8to10:"8,000–10,000",
+    bl_10to13:"10,000–13,000", bl_13to16:"13,000–16,000", bl_gt16:"> 16,000",
+    below10k:"Below 10,000", above10k:"Above 10,000",
+    // regions
+    rg_riyadh:"Riyadh", rg_makkah:"Makkah", rg_eastern:"Eastern Province", rg_madinah:"Madinah", rg_asir:"Asir",
+    rg_qassim:"Qassim", rg_tabuk:"Tabuk", rg_hail:"Hail", rg_jazan:"Jazan", rg_najran:"Najran",
+    rg_bahah:"Al-Bahah", rg_jawf:"Al-Jawf", rg_northern:"Northern Borders",
+    // pages text
+    home_hello:"Welcome", monthlyCycle:"Monthly allocation review",
+    data_sub:"Daily automated cycle cleans data and writes prices & budget to BIDSC.",
+    runCycle:"Run daily data cycle", writingBidsc:"Writing to BIDSC", bidscDone:"BIDSC updated",
+    alloc_sub:"Explainable proposed distribution within the approved policy matrix.",
+    forecast_sub:"12-month spend projection with budget ceiling, plus multi-dimensional Fairness Gap & leakage.",
+    spendForecast:"Spend forecast (12 months)", budgetCeiling:"Budget ceiling", alert:"Alert",
+    alertMsg:"Cumulative spend exceeds 70% of the monthly ceiling — early warning raised.",
+    fairnessByRegion:"Fairness Gap by region", leakage:"Leakage & undue-benefit signals",
+    whatif_sub:"Ask in plain language or move the levers — the orchestration layer calls the agents and the KPIs update live.",
+    nlPlaceholder:"e.g. Boost support to families under 10,000 by 10% and assess the impact",
+    orchestration:"Agent orchestration", levers:"Policy levers",
+    lv_realloc:"Reallocate >10k → <10k", lv_cap:"Cap >10k support", lv_boost:"Boost <10k support", lv_offplan:"Restrict off-plan",
+    runWhatif:"Run simulation", compare:"Baseline vs scenario", assembleFromHere:"Assemble decision package from this scenario",
+    pkg_sub:"Assemble the explained package and submit it up the decision chain.",
+    approvals_sub:"Review tactical recommendations submitted by analysts.",
+    cockpit_sub:"Strategic KPIs and items requiring ministerial adjudication.",
+    decisions_sub:"Items escalated for strategic adjudication (caps / internal regulations).",
+    audit_sub:"Every submission, approval, rejection and adjudication is recorded.",
+    copilot_sub:"Approved outputs are delivered to Housing Copilot via the API Contract.",
+    deliver:"Deliver to Housing Copilot", opening:"Opening Housing Copilot…",
+    redline:"The system only recommends. It never auto-approves, never auto-suspends support, never edits regulations.",
+    pkgStatus_draft:"Draft", pkgStatus_submitted:"Awaiting Business Owner", pkgStatus_approved:"Approved (tactical)",
+    pkgStatus_escalated:"Awaiting Minister", pkgStatus_adjudicated:"Adjudicated", pkgStatus_rejected:"Rejected",
+    needsMinister:"Exceeds tactical authority — affects support cap. Escalate to Minister.",
+    by:"by", at:"at", level:"Level", agentChain:"Orchestration chain",
+    ag_uc01:"UC-01 Subsidy Formula (temp)", ag_uc03:"UC-03 Optimization", ag_uc04:"UC-04 Forecast", ag_uc08:"UC-08 Fairness",
+    deliveredItems:"Recommendation · HBR · Fairness Gap · What-if result",
+    annualSavings:"Annual savings", phaseSavings:"5-year savings", reviewRun:"Review & run What-if",
+    contractsTarget:"Contract target 2026–2030", ownership:"Ownership rate",
+    more:"More", workOrder:"Work order", colStatus:"Status", records:"Records", vsPrev:"vs last cycle",
+    completeness:"Completeness", lastUpdate:"Last update", leversUsed:"Levers used", expectedImpact:"Expected impact",
+    alertTitle:"Budget alert", quickActions:"Quick actions", action:"Action", time:"Time", note:"Note", noLevers:"No change (baseline)",
+    td_alloc:"Review this month's allocation plan", td_forecast:"Resolve spending alerts",
+    td_whatif:"Run What-if for the interest-rate scenario", td_packages:"Submit assembled decision packages",
+    td_copilot:"Deliver approved outputs to Housing Copilot",
+    due_today:"Due today", due_3:"3 open", due_2:"2 ready", due_soon:"This week", due_1:"1 pending",
+  },
+  ar:{
+    appName:"التخصيص الديناميكي للدعم وتحسينه",
+    ministry:"وزارة البلديات والإسكان", agency:"هيئة الدعم السكني",
+    syntheticData:"بيانات تجريبية اصطناعية — ليست مستفيدين حقيقيين",
+    login:"تسجيل الدخول", username:"اسم المستخدم", password:"كلمة المرور", chooseRole:"اختر هوية تجريبية",
+    loginHint:"كلمة المرور مُعبّأة للعرض (بدون مصادقة فعلية).", enter:"دخول",
+    logout:"تسجيل الخروج", language:"اللغة", currency:"العملة", resetDemo:"إعادة ضبط العرض",
+    analyst:"محلل", owner:"مالك الأعمال", minister:"الوزير",
+    analyst_full:"محلل الدعم السكني", owner_full:"مالك الأعمال (تنفيذي)", minister_full:"معالي الوزير",
+    analyst_desc:"يشغّل التحليلات والمحاكاة ويُجمّع حزم القرار ويرفعها.",
+    owner_desc:"يراجع ويعتمد التوصيات التكتيكية.",
+    minister_desc:"يبتّ في البنود الاستراتيجية (السقوف / اللوائح الداخلية).",
+    nav_home:"الرئيسية", nav_data:"جاهزية البيانات", nav_alloc:"خطة التخصيص", nav_forecast:"التنبؤ والعدالة",
+    nav_whatif:"محاكاة الافتراضات", nav_packages:"حزم القرار", nav_approvals:"الاعتمادات",
+    nav_audit:"سجل التدقيق", nav_copilot:"مساعد الإسكان", nav_cockpit:"لوحة القيادة", nav_decisions:"القرارات الاستراتيجية",
+    kpi_savings:"الوفورات المتوقعة (٥ سنوات)", kpi_fairness:"فجوة العدالة", kpi_hbr:"عبء السكن (HBR)",
+    kpi_budget:"استخدام الميزانية", kpi_contracts:"العقود مقابل المستهدف", kpi_pending:"قرارات معلّقة",
+    kpi_forecastErr:"خطأ التنبؤ", kpi_dataReady:"جاهزية البيانات", kpi_adoption:"معدل التبني",
+    of_budget:"من ميزانية ٧٫٩ مليار", target:"المستهدف", baseline:"الأساس", current:"الحالي",
+    fair_if:"عادلة عند ≥ ١٫٠", toTarget:"نحو مستهدف ٢٠٣٠: ٣٠–٣٥٪",
+    explain:"عرض المبرر", impact:"الأثر المتوقع", submit:"تجميع ورفع الحزمة", approve:"اعتماد",
+    reject:"رفض مع ملاحظات", escalate:"رفع للوزير", adjudicate:"البتّ", view:"عرض",
+    run:"تشغيل", running:"جارٍ…", done:"تم", apply:"تطبيق", todo:"المهام", status:"الحالة",
+    region:"المنطقة", incomeBand:"شريحة الدخل", contracts:"العقود", subsidy:"متوسط الدعم", share:"الحصة",
+    before:"قبل", after:"بعد", delta:"التغير", scenario:"السيناريو", recommended:"موصى به",
+    notifTitle:"تم رفع حزمة القرار", noItems:"لا يوجد بعد.",
+    src_sakani:"منصة سكني", src_redf:"صندوق التنمية العقارية", src_nhc:"الشركة الوطنية للإسكان",
+    src_rega:"الهيئة العامة للعقار", src_ncsi:"الهيئة العامة للإحصاء", src_sama:"البنك المركزي",
+    st_ok:"محدّث", st_pending:"بانتظار الاعتماد", st_delayed:"متأخر ٣–٦ أشهر", quality:"الجودة", freq:"التحديث",
+    bl_lt5:"أقل من ٥٬٠٠٠", bl_5to8:"٥٬٠٠٠–٨٬٠٠٠", bl_8to10:"٨٬٠٠٠–١٠٬٠٠٠",
+    bl_10to13:"١٠٬٠٠٠–١٣٬٠٠٠", bl_13to16:"١٣٬٠٠٠–١٦٬٠٠٠", bl_gt16:"أكثر من ١٦٬٠٠٠",
+    below10k:"أقل من ١٠٬٠٠٠", above10k:"أكثر من ١٠٬٠٠٠",
+    rg_riyadh:"الرياض", rg_makkah:"مكة المكرمة", rg_eastern:"المنطقة الشرقية", rg_madinah:"المدينة المنورة", rg_asir:"عسير",
+    rg_qassim:"القصيم", rg_tabuk:"تبوك", rg_hail:"حائل", rg_jazan:"جازان", rg_najran:"نجران",
+    rg_bahah:"الباحة", rg_jawf:"الجوف", rg_northern:"الحدود الشمالية",
+    home_hello:"مرحباً", monthlyCycle:"مراجعة التخصيص الشهرية",
+    data_sub:"دورة يومية آلية تنظّف البيانات وتكتب الأسعار والميزانية إلى BIDSC.",
+    runCycle:"تشغيل الدورة اليومية", writingBidsc:"الكتابة إلى BIDSC", bidscDone:"تم تحديث BIDSC",
+    alloc_sub:"خطة توزيع مقترحة قابلة للتفسير ضمن مصفوفة السياسة المعتمدة.",
+    forecast_sub:"تنبؤ إنفاق ١٢ شهراً مع سقف الميزانية، وفجوة عدالة متعددة الأبعاد ورصد التسرب.",
+    spendForecast:"تنبؤ الإنفاق (١٢ شهراً)", budgetCeiling:"سقف الميزانية", alert:"تنبيه",
+    alertMsg:"تجاوز الإنفاق التراكمي ٧٠٪ من السقف الشهري — تم رفع إنذار مبكر.",
+    fairnessByRegion:"فجوة العدالة حسب المنطقة", leakage:"إشارات التسرب والاستفادة غير المستحقة",
+    whatif_sub:"اسأل بلغة طبيعية أو حرّك المؤشرات — تستدعي طبقة التنسيق الوكلاء وتتحدث المؤشرات فوراً.",
+    nlPlaceholder:"مثال: ارفع الدعم للأسر أقل من ١٠٬٠٠٠ بنسبة ١٠٪ وقيّم الأثر",
+    orchestration:"تنسيق الوكلاء", levers:"روافع السياسة",
+    lv_realloc:"إعادة التوزيع >١٠ك ← <١٠ك", lv_cap:"تقييد دعم >١٠ك", lv_boost:"رفع دعم <١٠ك", lv_offplan:"تقييد البيع على الخارطة",
+    runWhatif:"تشغيل المحاكاة", compare:"الأساس مقابل السيناريو", assembleFromHere:"تجميع حزمة قرار من هذا السيناريو",
+    pkg_sub:"جمّع الحزمة المفسّرة وارفعها في سلسلة القرار.",
+    approvals_sub:"راجع التوصيات التكتيكية المرفوعة من المحللين.",
+    cockpit_sub:"مؤشرات استراتيجية وبنود تتطلب بتّ الوزير.",
+    decisions_sub:"بنود مرفوعة للبتّ الاستراتيجي (السقوف / اللوائح الداخلية).",
+    audit_sub:"يُسجّل كل رفع واعتماد ورفض وبتّ.",
+    copilot_sub:"تُسلَّم المخرجات المعتمدة إلى مساعد الإسكان عبر عقد الـ API.",
+    deliver:"التسليم إلى مساعد الإسكان", opening:"جارٍ فتح مساعد الإسكان…",
+    redline:"النظام يوصي فقط: لا يعتمد آلياً، ولا يوقف الدعم آلياً، ولا يعدّل اللوائح.",
+    pkgStatus_draft:"مسودة", pkgStatus_submitted:"بانتظار مالك الأعمال", pkgStatus_approved:"معتمد (تكتيكي)",
+    pkgStatus_escalated:"بانتظار الوزير", pkgStatus_adjudicated:"تم البتّ", pkgStatus_rejected:"مرفوض",
+    needsMinister:"يتجاوز الصلاحية التكتيكية — يمسّ سقف الدعم. يُرفع للوزير.",
+    by:"بواسطة", at:"في", level:"المستوى", agentChain:"سلسلة التنسيق",
+    ag_uc01:"UC-01 صيغة الدعم (مؤقتة)", ag_uc03:"UC-03 التحسين", ag_uc04:"UC-04 التنبؤ", ag_uc08:"UC-08 العدالة",
+    deliveredItems:"توصية · HBR · فجوة العدالة · نتيجة المحاكاة",
+    annualSavings:"الوفورات السنوية", phaseSavings:"وفورات ٥ سنوات", reviewRun:"المراجعة وتشغيل المحاكاة",
+    contractsTarget:"مستهدف العقود ٢٠٢٦–٢٠٣٠", ownership:"معدل التملك",
+    more:"المزيد", workOrder:"أمر العمل", colStatus:"الحالة", records:"السجلات", vsPrev:"مقابل الدورة السابقة",
+    completeness:"اكتمال الحقول", lastUpdate:"آخر تحديث", leversUsed:"الروافع المستخدمة", expectedImpact:"الأثر المتوقع",
+    alertTitle:"تنبيه الميزانية", quickActions:"إجراءات سريعة", action:"الإجراء", time:"الوقت", note:"ملاحظة", noLevers:"دون تغيير (الأساس)",
+    td_alloc:"مراجعة خطة التخصيص لهذا الشهر", td_forecast:"معالجة تنبيهات الإنفاق",
+    td_whatif:"تشغيل محاكاة لسيناريو سعر الفائدة", td_packages:"رفع حزم القرار المُجمّعة",
+    td_copilot:"تسليم المخرجات المعتمدة إلى مساعد الإسكان",
+    due_today:"مستحق اليوم", due_3:"٣ مفتوحة", due_2:"٢ جاهزة", due_soon:"هذا الأسبوع", due_1:"١ معلّق",
+  }
+};
+
+/* =========================================================================
+   Store / context
+   ========================================================================= */
+const Ctx = createContext(null);
+const useStore = () => useContext(Ctx);
+
+function statusToText(t,s){ return s==="ok"?t("st_ok"):s==="pending"?t("st_pending"):t("st_delayed"); }
+const n0 = v => Math.round(v).toLocaleString("en-US");
+const pct1 = v => (v*100).toFixed(1)+"%";
+function abbr(v){ const a=Math.abs(v);
+  if(a>=1e9) return (v/1e9).toFixed(2)+"B";
+  if(a>=1e6) return (v/1e6).toFixed(0)+"M";
+  if(a>=1e3) return (v/1e3).toFixed(0)+"K";
+  return n0(v); }
+function useMoney(){ const {currency}=useStore(); const pre = currency==="symbol" ? "⃁ " : "SAR ";
+  return { money:(v)=>pre+abbr(v), moneyFull:(v)=>pre+n0(v) }; }
+
+/* =========================================================================
+   UI atoms
+   ========================================================================= */
+function KPI({label,value,sub,tone}){
+  const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
+  return (<div className="kpi"><div className="label">{label}</div>
+    <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub muted">{sub}</div>}</div>);
+}
+function Section({title,sub,right,children}){
+  return (<div className="card pad" style={{marginBottom:16}}>
+    <div className="page-h" style={{marginBottom:sub?12:8}}>
+      <div><h2 style={{fontSize:16}}>{title}</h2>{sub&&<div className="sub muted">{sub}</div>}</div>{right}</div>
+    {children}</div>);
+}
+function Progress({v,color}){ return (<div className="progress"><span style={{width:Math.min(100,v*100)+"%",background:color||"var(--green)"}}/></div>); }
+function Bar({label,v,max,color}){ return (<div style={{marginBottom:8}}>
+  <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span>{label}</span><span className="mono">{(v).toFixed(2)}</span></div>
+  <div className="progress"><span style={{width:Math.min(100,(v/max)*100)+"%",background:color}}/></div></div>); }
+
+/* =========================================================================
+   Login
+   ========================================================================= */
+const ROLE_KEYS = ["analyst","owner","minister"];
+function Login(){
+  const {t,setUser,lang,setLang}=useStore();
+  const [role,setRole]=useState("analyst");
+  return (<div className="login-wrap">
+    <div className="login-card fade">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:40,height:40,borderRadius:10,background:"var(--green)",color:"#fff",display:"grid",placeItems:"center",fontWeight:800}}>م</div>
+          <div><div style={{fontWeight:700}}>{t("ministry")}</div><div className="muted" style={{fontSize:12}}>{t("agency")}</div></div>
+        </div>
+        <button className="btn ghost sm" onClick={()=>setLang(lang==="en"?"ar":"en")}>{lang==="en"?"العربية":"EN"}</button>
+      </div>
+      <h1 style={{fontSize:20,marginBottom:2}}>{t("appName")}</h1>
+      <div className="muted" style={{fontSize:12.5,marginBottom:16}}>{t("login")}</div>
+      <div className="field"><label>{t("chooseRole")}</label>
+        <div className="role-pick">
+          {ROLE_KEYS.map(rk=>(
+            <button key={rk} className={"role-opt"+(role===rk?" sel":"")} onClick={()=>setRole(rk)}>
+              <span className="av">{t(rk).slice(0,1)}</span>
+              <span style={{flex:1}}><span style={{fontWeight:700,display:"block"}}>{t(rk+"_full")}</span>
+                <span className="muted" style={{fontSize:12}}>{t(rk+"_desc")}</span></span>
+              {role===rk&&<span style={{color:"var(--green)",fontWeight:800}}>✓</span>}
+            </button>))}
+        </div>
+      </div>
+      <div className="field"><label>{t("username")}</label>
+        <input className="input" value={t(role)} readOnly/></div>
+      <div className="field"><label>{t("password")}</label>
+        <input className="input" type="password" value="********" readOnly/></div>
+      <button className="btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>setUser(role)}>{t("enter")}</button>
+      <div className="muted" style={{fontSize:11.5,marginTop:10,textAlign:"center"}}>{t("loginHint")}</div>
+    </div>
+  </div>);
+}
+
+/* =========================================================================
+   Shell: top bar + sidebar
+   ========================================================================= */
+function TopBar(){
+  const {t,lang,setLang,currency,setCurrency,user,setUser,reset}=useStore();
+  const [open,setOpen]=useState(false);
+  return (<div className="topbar">
+    <div className="brand"><div className="logo">م</div>
+      <div><div style={{fontSize:14}}>{t("appName")}</div>
+        <div style={{fontSize:11,opacity:.85,fontWeight:500}}>{t("agency")}</div></div></div>
+    <div className="right">
+      <span className="chip gold" style={{background:"rgba(255,255,255,.15)",color:"#fff"}}>● {t("syntheticData")}</span>
+      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>🌐 {lang==="en"?"العربية":"English"}</button>
+      <button className="tbtn" onClick={()=>setCurrency(currency==="SAR"?"symbol":"SAR")}>{currency==="SAR"?"SAR":"⃁"}</button>
+      <div className="usermenu">
+        <button className="tbtn" onClick={()=>setOpen(o=>!o)}>👤 {t(user)} ▾</button>
+        {open&&<div className="panel" onMouseLeave={()=>setOpen(false)}>
+          <div style={{padding:"6px 8px",fontWeight:700}}>{t(user+"_full")}</div>
+          <div style={{padding:"2px 8px 10px",fontSize:12}} className="muted">{t(user+"_desc")}</div>
+          <div className="divider" style={{margin:"6px 0"}}/>
+          <button className="btn ghost sm" style={{width:"100%",marginBottom:6}} onClick={()=>{reset();setOpen(false);}}>↺ {t("resetDemo")}</button>
+          <button className="btn danger sm" style={{width:"100%"}} onClick={()=>setUser(null)}>⎋ {t("logout")}</button>
+        </div>}
+      </div>
+    </div>
+  </div>);
+}
+
+const NAV = {
+  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_forecast","📈"],["nav_whatif","✦"],["nav_packages","🗎"],["nav_audit","🕓"],["nav_copilot","🤝"]],
+  owner:[["nav_home","◧"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
+  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_audit","🕓"]],
+};
+function Sidebar(){
+  const {t,user,route,setRoute,packages}=useStore();
+  const pendingForOwner = packages.filter(p=>p.status==="submitted").length;
+  const pendingForMin = packages.filter(p=>p.status==="escalated").length;
+  return (<div className="sidebar">
+    <div className="role"><div className="nm">{t(user+"_full")}</div><div className="rl">{t(user)}</div></div>
+    {NAV[user].map(([k,ic])=>{
+      const key=k.replace("nav_","");
+      const badge = (user==="owner"&&k==="nav_approvals"&&pendingForOwner)||(user==="minister"&&k==="nav_decisions"&&pendingForMin);
+      return (<div key={k} className={"navitem"+(route===key?" active":"")} onClick={()=>setRoute(key)}>
+        <span className="ico">{ic}</span><span style={{flex:1}}>{t(k)}</span>
+        {badge?<span className="badge-count">{badge}</span>:null}</div>);
+    })}
+  </div>);
+}
+
+const RECO_PARAMS = { reallocatePct:0.15, capHighPct:0.12, boostLowPct:0.10, offPlanPct:0.08 };
+
+function PageHeader({title,sub,right}){
+  return (<div className="page-h"><div><h1>{title}</h1>{sub&&<div className="sub">{sub}</div>}</div>{right}</div>);
+}
+function bandLabel(t,key){ return t("bl_"+key); }
+
+/* ---- Analyst home ---- */
+function AnalystHome(){
+  const {t,setRoute,packages}=useStore(); const {money}=useMoney();
+  const reco=useMemo(()=>computeAllocation(RECO_PARAMS),[]);
+  const sv=scenarioSavings(reco);
+  const myPending=packages.filter(p=>p.status==="submitted").length;
+  const items=[
+    {ic:"▦", k:"td_alloc",    due:"due_today", chip:"info",  route:"alloc"},
+    {ic:"📈", k:"td_forecast", due:"due_3",     chip:"amber", route:"forecast"},
+    {ic:"✦", k:"td_whatif",   due:"due_soon",  chip:"gray",  route:"whatif"},
+    {ic:"🗎", k:"td_packages", due:"due_2",     chip:"info",  route:"packages"},
+    {ic:"🤝", k:"td_copilot",  due:"due_1",     chip:"gray",  route:"copilot"},
+  ];
+  const quick=[["nav_alloc","▦","alloc"],["nav_forecast","📈","forecast"],["nav_whatif","✦","whatif"],["nav_packages","🗎","packages"]];
+  return (<div className="fade">
+    <PageHeader title={t("home_hello")+" · "+t("analyst_full")} sub={t("monthlyCycle")}/>
+    <div className="cols-4" style={{marginBottom:16}}>
+      <KPI label={t("kpi_savings")+" ("+t("recommended")+")"} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
+      <KPI label={t("kpi_fairness")} value={BASELINE.FG.toFixed(2)} sub={t("fair_if")} tone="bad"/>
+      <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} sub={t("toTarget")} tone="warn"/>
+      <KPI label={t("kpi_budget")} value={(BASELINE.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)+"%"} sub={t("baseline")} />
+    </div>
+    <Section title={t("todo")}>
+      {items.map((it,i)=>(<div key={i} className="todo-row">
+        <span className="av sm">{it.ic}</span>
+        <div style={{flex:1}}><div style={{fontWeight:600}}>{t(it.k)}</div></div>
+        <span className={"chip "+it.chip}>{t(it.due)}</span>
+        <button className="btn ghost sm" onClick={()=>setRoute(it.route)}>{t("more")} →</button>
+      </div>))}
+    </Section>
+    <Section title={t("quickActions")}>
+      <div className="cols-4">
+        {quick.map(([k,ic,r])=>(<button key={k} className="role-opt" onClick={()=>setRoute(r)}>
+          <span className="av">{ic}</span><span style={{fontWeight:600}}>{t(k)}</span></button>))}
+      </div>
+    </Section>
+  </div>);
+}
+
+/* ---- Data readiness (UC-02) ---- */
+function DataReadiness(){
+  const {t}=useStore();
+  const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
+  function run(){ setRunning(true); setDone(false); setProg(0);
+    let p=0; const id=setInterval(()=>{ p+=10; setProg(p); if(p>=100){clearInterval(id);setRunning(false);setDone(true);} },120); }
+  return (<div className="fade">
+    <PageHeader title={t("nav_data")} sub={t("data_sub")}
+      right={<button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>}/>
+    <Section title="BIDSC">
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
+        <div style={{flex:1}}><Progress v={prog/100}/></div>
+        <span className="chip">{done?("✓ "+t("bidscDone")):(t("writingBidsc")+" "+prog+"%")}</span>
+      </div>
+    </Section>
+    <div className="cols-3">
+      {DATA_SOURCES.map(s=>{
+        const tone=s.status==="ok"?"var(--green)":s.status==="pending"?"var(--amber)":"var(--danger)";
+        const dCol=s.delta>0?"var(--green)":s.delta<0?"var(--danger)":"var(--muted)";
+        const dStr=(s.delta>0?"▲ +":s.delta<0?"▼ ":"– ")+Math.abs(s.delta)+"%";
+        return (<div key={s.key} className="card pad">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <strong>{t("src_"+s.key)}</strong>
+            <span className="chip" style={{background:tone+"22",color:tone}}>● {statusToText(t,s.status)}</span></div>
+          <div className="kv">
+            <div className="kv-row"><span className="muted">{t("records")}</span>
+              <span><span className="mono">{n0(s.records)}</span> <span className="mono" style={{color:dCol,fontSize:11}}>{dStr}</span> <span className="muted" style={{fontSize:11}}>{t("vsPrev")}</span></span></div>
+            <div className="kv-row"><span className="muted">{t("freq")}</span><span>{s.freq}</span></div>
+            <div className="kv-row"><span className="muted">{t("lastUpdate")}</span><span>{s.updated}</span></div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,margin:"10px 0 4px"}}>
+            <span className="muted">{t("quality")}</span><span className="mono">{s.quality}%</span></div>
+          <Progress v={s.quality/100} color={tone}/>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,margin:"8px 0 4px"}}>
+            <span className="muted">{t("completeness")}</span><span className="mono">{s.completeness}%</span></div>
+          <Progress v={s.completeness/100} color="var(--info)"/>
+        </div>);
+      })}
+    </div>
+  </div>);
+}
+
+/* ---- Allocation (UC-03) ---- */
+function Allocation(){
+  const {t}=useStore(); const {moneyFull}=useMoney();
+  const [open,setOpen]=useState(null);
+  const data=BASELINE;
+  return (<div className="fade">
+    <PageHeader title={t("nav_alloc")} sub={t("alloc_sub")}/>
+    <Section title={t("monthlyCycle")} right={<span className="chip">{t("kpi_budget")}: {(data.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)}%</span>}>
+      <div className="scrollx"><table className="tbl">
+        <thead><tr><th>{t("incomeBand")}</th><th className="right-num">{t("contracts")}</th><th className="right-num">{t("subsidy")}</th><th className="right-num">{t("share")}</th><th></th></tr></thead>
+        <tbody>{data.rows.map((r,i)=>(<React.Fragment key={r.key}>
+          <tr>
+            <td>{bandLabel(t,r.key)} {r.below?<span className="chip gray" style={{marginInlineStart:6}}>{t("below10k")}</span>:null}</td>
+            <td className="right-num mono">{n0(r.contracts)}</td>
+            <td className="right-num mono">{moneyFull(r.subsidy)}</td>
+            <td className="right-num mono">{(r.cShare*100).toFixed(1)}%</td>
+            <td className="right-num"><button className="btn ghost sm" onClick={()=>setOpen(open===i?null:i)}>{t("explain")}</button></td>
+          </tr>
+          {open===i&&<tr className="expand-row"><td colSpan={5}>
+            <div style={{fontSize:12.5}}>
+              <strong>{t("impact")}:</strong> {bandLabel(t,r.key)} — {r.below?t("below10k"):t("above10k")} · {t("subsidy")} {moneyFull(r.subsidy)} · {t("share")} {(r.cShare*100).toFixed(1)}% · HBR {pct1(r.hbr)}.
+              <div className="muted" style={{marginTop:4}}>Within the approved policy matrix · contributes to Fairness Gap {BASELINE.FG.toFixed(2)}.</div>
+            </div></td></tr>}
+        </React.Fragment>))}</tbody>
+      </table></div>
+    </Section>
+  </div>);
+}
+
+/* ---- Forecast & Fairness (UC-04 / UC-08) ---- */
+function ForecastFairness(){
+  const {t}=useStore(); const {money}=useMoney();
+  const scn=BASELINE; const fc=useMemo(()=>buildForecast(scn),[]);
+  const regions=useMemo(()=>fgByRegion(scn.FG),[]);
+  const C=RC; const ok=!!RC.ResponsiveContainer;
+  const noChart=<div className="muted" style={{padding:20}}>Chart library unavailable (offline). Data is still computed correctly.</div>;
+  return (<div className="fade">
+    <PageHeader title={t("nav_forecast")} sub={t("forecast_sub")}/>
+    {fc.alertMonth&&<div className="alert-strong fade">
+      <span className="alert-ico">⚠</span>
+      <div style={{flex:1}}>
+        <div className="alert-title">{t("alertTitle")} · M{fc.alertMonth}</div>
+        <div className="alert-body">{t("alertMsg")}</div>
+      </div>
+      <span className="alert-pill">{t("alert")}</span>
+    </div>}
+    <Section title={t("spendForecast")}>
+      <div style={{width:"100%",height:260}}>
+        {!ok? noChart :
+        <C.ResponsiveContainer>
+          <C.LineChart data={fc.months} margin={{top:8,right:16,left:8,bottom:4}}>
+            <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
+            <C.XAxis dataKey="m" tick={{fontSize:11}}/>
+            <C.YAxis tickFormatter={abbr} tick={{fontSize:11}} width={48}/>
+            <C.Tooltip formatter={(v)=>money(v)}/>
+            <C.Line type="monotone" dataKey="cumulative" stroke="#006C35" strokeWidth={2} dot={false} name={t("kpi_budget")}/>
+            <C.Line type="monotone" dataKey="ceiling" stroke="#b3261e" strokeDasharray="5 4" strokeWidth={2} dot={false} name={t("budgetCeiling")}/>
+          </C.LineChart>
+        </C.ResponsiveContainer>}
+      </div>
+    </Section>
+    <div className="cols-2">
+      <Section title={t("fairnessByRegion")}>
+        <div style={{width:"100%",height:300}}>
+          {!ok? noChart :
+          <C.ResponsiveContainer>
+            <C.BarChart data={regions.map(r=>({name:t("rg_"+r.key),fg:r.fg}))} margin={{top:4,right:8,left:0,bottom:4}}>
+              <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
+              <C.XAxis dataKey="name" tick={{fontSize:9}} interval={0} angle={-30} textAnchor="end" height={60}/>
+              <C.YAxis tick={{fontSize:11}} domain={[0,1.4]}/>
+              <C.Tooltip/>
+              <C.ReferenceLine y={1.0} stroke="#006C35" strokeDasharray="4 4"/>
+              <C.Bar dataKey="fg" radius={[3,3,0,0]}>
+                {regions.map((r,i)=><C.Cell key={i} fill={r.fg>=1?"#006C35":r.fg>=0.9?"#9a6b00":"#b3261e"}/>)}
+              </C.Bar>
+            </C.BarChart>
+          </C.ResponsiveContainer>}
+        </div>
+      </Section>
+      <Section title={t("leakage")}>
+        {[["Riyadh · off-plan cluster","danger","2.3%"],["Makkah · duplicate benefit","amber","0.8%"],["Eastern · price drift","info","1.1%"]].map((x,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid var(--line)"}}>
+            <span>{x[0]}</span><span className={"chip "+x[1]}>{x[2]}</span></div>))}
+        <div className="muted" style={{fontSize:12,marginTop:10}}>{t("redline")}</div>
+      </Section>
+    </div>
+  </div>);
+}
+
+/* ---- Orchestration chain ---- */
+function OrchestrationChain({states}){
+  const {t}=useStore();
+  const nodes=["ag_uc01","ag_uc03","ag_uc04","ag_uc08"];
+  return (<div className="chain">
+    {nodes.map((k,i)=>{ const s=states[i]||"idle";
+      return (<div key={k} className={"node "+(s==="run"?"run":s==="done"?"done":"")}>
+        <span style={{width:8,height:8,borderRadius:"50%",background:s==="done"?"var(--green)":s==="run"?"var(--info)":"#cbd5d0"}}/>
+        <span style={{flex:1,fontSize:13,fontWeight:600}}>{t(k)}</span>
+        <span className="st" style={{color:s==="done"?"var(--green)":s==="run"?"var(--info)":"var(--muted)"}}>
+          {s==="run"?t("running"):s==="done"?("✓ "+t("done")):"—"}</span>
+      </div>); })}
+  </div>);
+}
+
+/* ---- What-if (UC-09) — centerpiece ---- */
+function WhatIf(){
+  const {t,setRoute,addPackage,user}=useStore(); const {money}=useMoney();
+  const [p,setP]=useState({reallocatePct:0,capHighPct:0,boostLowPct:0,offPlanPct:0});
+  const [nl,setNl]=useState("");
+  const [chain,setChain]=useState(["idle","idle","idle","idle"]);
+  const [busy,setBusy]=useState(false);
+  const scn=useMemo(()=>computeAllocation(p),[p]);
+  const sv=scenarioSavings(scn);
+  const C=RC;
+  function animateChain(then){
+    setBusy(true); const seq=["idle","idle","idle","idle"];
+    [0,1,2,3].forEach((i)=>{
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="run";return n;}); },i*450);
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then();} },i*450+380);
+    });
+  }
+  function runSim(){ animateChain(); }
+  function runNL(){
+    // light NL parse: first number → boost <10k; mention of cap/reduce → cap; else recommended preset
+    const m=nl.match(/(\d+)\s*%?/); const num=m?clamp(parseInt(m[1])/100,0,0.45):0.10;
+    const next={...RECO_PARAMS, boostLowPct:num};
+    if(/cap|reduce|تقييد|خفض/i.test(nl)) next.capHighPct=0.20;
+    animateChain(()=>setP(next));
+  }
+  function assemble(){
+    const affectsCap = p.capHighPct>0 || p.reallocatePct>0.20;
+    addPackage({
+      title: t("scenario")+" · "+new Date().toLocaleDateString(),
+      params:{...p}, affectsCap,
+      kpis:{ savingsPhase:sv.phase, pctBudget:sv.pctOfBudget, fg:scn.FG, hbr:scn.HBR },
+    });
+    setRoute("packages");
+  }
+  const cmp=[
+    {k:t("kpi_savings"),b:"0",a:money(sv.phase),tone:"good"},
+    {k:t("kpi_fairness"),b:BASELINE.FG.toFixed(2),a:scn.FG.toFixed(2),tone:scn.FG>=1?"good":"warn"},
+    {k:t("kpi_hbr"),b:pct1(BASELINE.HBR),a:pct1(scn.HBR),tone:"good"},
+  ];
+  const Slider=({lk,field,max})=>(<div className="field">
+    <label style={{display:"flex",justifyContent:"space-between"}}><span>{t(lk)}</span><span className="mono">{Math.round(p[field]*100)}%</span></label>
+    <input className="range" type="range" min="0" max={max} step="1" value={Math.round(p[field]*100)}
+      onChange={e=>setP({...p,[field]:parseInt(e.target.value)/100})}/></div>);
+  return (<div className="fade">
+    <PageHeader title={t("nav_whatif")} sub={t("whatif_sub")}/>
+    <Section title={t("orchestration")}>
+      <div style={{display:"flex",gap:8,marginBottom:12}}>
+        <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
+        <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
+      </div>
+      <OrchestrationChain states={chain}/>
+    </Section>
+    <div className="cols-2">
+      <Section title={t("levers")} right={<button className="btn secondary sm" onClick={runSim} disabled={busy}>{busy?t("running"):t("runWhatif")}</button>}>
+        <Slider lk="lv_realloc" field="reallocatePct" max="30"/>
+        <Slider lk="lv_cap" field="capHighPct" max="35"/>
+        <Slider lk="lv_boost" field="boostLowPct" max="45"/>
+        <Slider lk="lv_offplan" field="offPlanPct" max="20"/>
+      </Section>
+      <div>
+        <div className="cols-3" style={{marginBottom:16}}>
+          <KPI label={t("kpi_savings")} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
+          <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
+          <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
+        </div>
+        <Section title={t("compare")}>
+          <table className="tbl"><thead><tr><th></th><th className="right-num">{t("before")}</th><th className="right-num">{t("after")}</th></tr></thead>
+            <tbody>{cmp.map((r,i)=>(<tr key={i}><td>{r.k}</td><td className="right-num mono muted">{r.b}</td>
+              <td className="right-num mono" style={{fontWeight:700,color:r.tone==="good"?"var(--green)":"var(--amber)"}}>{r.a}</td></tr>))}</tbody></table>
+        </Section>
+      </div>
+    </div>
+    {user==="analyst"&&<button className="btn" style={{marginTop:4}} onClick={assemble}>🗎 {t("assembleFromHere")}</button>}
+  </div>);
+}
+
+/* ---- Decision packages (role-aware) ---- */
+function statusChip(t,s){
+  const map={draft:"gray",submitted:"info",approved:"",escalated:"amber",adjudicated:"",rejected:"danger"};
+  return <span className={"chip "+(map[s]||"")}>{t("pkgStatus_"+s)}</span>;
+}
+function leverSummary(t,p){
+  const o=[];
+  if(p.reallocatePct) o.push([t("lv_realloc"), Math.round(p.reallocatePct*100)+"%"]);
+  if(p.capHighPct)    o.push([t("lv_cap"),     Math.round(p.capHighPct*100)+"%"]);
+  if(p.boostLowPct)   o.push([t("lv_boost"),   Math.round(p.boostLowPct*100)+"%"]);
+  if(p.offPlanPct)    o.push([t("lv_offplan"), Math.round(p.offPlanPct*100)+"%"]);
+  return o;
+}
+function PackageCard({pkg}){
+  const {t,user,actOnPackage}=useStore(); const {money}=useMoney();
+  const [note,setNote]=useState("");
+  const canOwner = user==="owner" && pkg.status==="submitted";
+  const canMin = user==="minister" && pkg.status==="escalated";
+  const levers=leverSummary(t,pkg.params||{});
+  return (<div className="card pad" style={{marginBottom:14}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
+      <div>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
+          <span className="wo">#{pkg.id}</span>{statusChip(t,pkg.status)}
+        </div>
+        <strong>{pkg.title}</strong>
+      </div>
+      <div className="muted" style={{fontSize:11,textAlign:"end",whiteSpace:"nowrap"}}>{pkg.history[0]&&pkg.history[0].ts}</div>
+    </div>
+    <div className="pkg-detail">
+      <div className="muted" style={{fontSize:12,marginBottom:6}}>{t("leversUsed")}</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12}}>
+        {levers.length? levers.map((l,i)=><span key={i} className="chip gray">{l[0]} <b style={{marginInlineStart:4}}>{l[1]}</b></span>)
+          : <span className="muted" style={{fontSize:12}}>{t("noLevers")}</span>}
+      </div>
+      <div className="cols-3">
+        <div className="mini-kpi"><div className="muted">{t("kpi_savings")}</div><div className="v" style={{color:"var(--green)"}}>{money(pkg.kpis.savingsPhase)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_fairness")}</div><div className="v">{pkg.kpis.fg.toFixed(2)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_hbr")}</div><div className="v">{pct1(pkg.kpis.hbr)}</div></div>
+      </div>
+    </div>
+    {pkg.affectsCap&&pkg.status!=="adjudicated"&&pkg.status!=="rejected"&&
+      <div className="banner" style={{marginTop:10}}>⚖ {t("needsMinister")}</div>}
+    {(canOwner||canMin)&&<div style={{marginTop:12}}>
+      <input className="input" placeholder={t("reject")} value={note} onChange={e=>setNote(e.target.value)} style={{marginBottom:10}}/>
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {canOwner&&!pkg.affectsCap&&<button className="btn" onClick={()=>actOnPackage(pkg.id,"approve",note)}>✔ {t("approve")}</button>}
+        {canOwner&&pkg.affectsCap&&<button className="btn" onClick={()=>actOnPackage(pkg.id,"escalate",note)}>⚖ {t("escalate")}</button>}
+        {canOwner&&<button className="btn danger" onClick={()=>actOnPackage(pkg.id,"reject",note)}>✕ {t("reject")}</button>}
+        {canMin&&<button className="btn" onClick={()=>actOnPackage(pkg.id,"adjudicate",note)}>⚖ {t("adjudicate")}</button>}
+        {canMin&&<button className="btn danger" onClick={()=>actOnPackage(pkg.id,"reject",note)}>✕ {t("reject")}</button>}
+      </div>
+    </div>}
+    <div className="timeline" style={{marginTop:14}}>
+      {pkg.history.map((h,i)=>(<div key={i} className="ev"><div style={{fontSize:12.5}}>
+        <span className="tag">{t(h.role)}</span> <b>{t(h.action)}</b> {h.note?("· "+h.note):""}</div>
+        <div className="muted" style={{fontSize:11}}>{h.ts}</div></div>))}
+    </div>
+  </div>);
+}
+function DecisionPackages({filter}){
+  const {t,packages}=useStore();
+  const list=packages.filter(filter||(()=>true));
+  return (<div className="fade">
+    <PageHeader title={t("nav_packages")} sub={t("pkg_sub")}/>
+    {list.length===0? <div className="card pad muted">{t("noItems")}</div>
+      : list.map(p=><PackageCard key={p.id} pkg={p}/>)}
+  </div>);
+}
+
+/* ---- Owner home ---- */
+function OwnerHome(){
+  const {t,packages,setRoute}=useStore();
+  const pending=packages.filter(p=>p.status==="submitted").length;
+  return (<div className="fade">
+    <PageHeader title={t("home_hello")+" · "+t("owner_full")} sub={t("approvals_sub")}/>
+    <div className="cols-4" style={{marginBottom:16}}>
+      <KPI label={t("kpi_pending")} value={pending} tone={pending?"warn":"good"}/>
+      <KPI label={t("kpi_fairness")} value={BASELINE.FG.toFixed(2)} sub={t("fair_if")} tone="bad"/>
+      <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} tone="warn"/>
+      <KPI label={t("kpi_adoption")} value="65%" sub={t("target")+" 75%"}/>
+    </div>
+    <Section title={t("nav_approvals")} right={<button className="btn sm" onClick={()=>setRoute("approvals")}>{t("view")}</button>}>
+      <div className="muted">{pending? (pending+" · "+t("pkgStatus_submitted")) : t("noItems")}</div>
+    </Section>
+  </div>);
+}
+
+/* ---- Minister cockpit ---- */
+function MinisterHome(){
+  const {t,packages,setRoute}=useStore(); const {money}=useMoney();
+  const approved=packages.filter(p=>p.status==="approved"||p.status==="adjudicated");
+  const totalSavings=approved.reduce((s,p)=>s+p.kpis.savingsPhase,0);
+  const pending=packages.filter(p=>p.status==="escalated").length;
+  return (<div className="fade">
+    <PageHeader title={t("nav_cockpit")+" · "+t("minister_full")} sub={t("cockpit_sub")}/>
+    <div className="cols-4" style={{marginBottom:16}}>
+      <KPI label={t("phaseSavings")} value={money(totalSavings)} sub={(totalSavings/BRD.phase3BudgetSAR*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
+      <KPI label={t("kpi_fairness")} value={BASELINE.FG.toFixed(2)} sub={t("fair_if")} tone="bad"/>
+      <KPI label={t("ownership")} value={pct1(BRD.ownershipNow)} sub={t("target")+" "+pct1(BRD.ownershipTarget)}/>
+      <KPI label={t("kpi_pending")} value={pending} tone={pending?"warn":"good"}/>
+    </div>
+    <Section title={t("contractsTarget")}>
+      <div className="muted" style={{marginBottom:8}}>{n0(BRD.targetContractsTotal)} ({t("target")})</div>
+      <Progress v={0.0}/>
+      <div style={{display:"flex",gap:16,marginTop:10,flexWrap:"wrap"}}>
+        <span className="chip">REDF {n0(BRD.targetBreakdown.redf)}</span>
+        <span className="chip">ZATCA {n0(BRD.targetBreakdown.zatca)}</span>
+        <span className="chip">Dev. {n0(BRD.targetBreakdown.devHousing)}</span>
+      </div>
+    </Section>
+    <Section title={t("nav_decisions")} right={<button className="btn sm" onClick={()=>setRoute("decisions")}>{t("view")}</button>}>
+      <div className="muted">{pending? (pending+" · "+t("pkgStatus_escalated")) : t("noItems")}</div>
+    </Section>
+  </div>);
+}
+
+/* ---- Audit trail ---- */
+function AuditTrailPage(){
+  const {t,audit}=useStore();
+  return (<div className="fade">
+    <PageHeader title={t("nav_audit")} sub={t("audit_sub")}/>
+    <div className="card pad">
+      {audit.length===0? <div className="muted">{t("noItems")}</div> :
+      <div className="scrollx"><table className="tbl">
+        <thead><tr>
+          <th>{t("workOrder")}</th><th>{t("level")}</th><th>{t("action")}</th>
+          <th>{t("colStatus")}</th><th>{t("time")}</th><th>{t("note")}</th>
+        </tr></thead>
+        <tbody>{audit.map((a,i)=>(<tr key={i}>
+          <td className="mono"><span className="wo">#{a.target}</span></td>
+          <td><span className="tag">{t(a.role)}</span></td>
+          <td>{t(a.action)}</td>
+          <td>{a.status? statusChip(t,a.status) : "—"}</td>
+          <td className="muted" style={{whiteSpace:"nowrap"}}>{a.ts}</td>
+          <td className="muted">{a.note||"—"}</td>
+        </tr>))}</tbody>
+      </table></div>}
+    </div>
+  </div>);
+}
+
+/* ---- Copilot handoff (UC-10) ---- */
+function CopilotHandoff(){
+  const {t,audit}=useStore();
+  const [sent,setSent]=useState(false);
+  function deliver(){ setSent(true); setTimeout(()=>{ window.open("http://momah.test.hyrhui.com","_blank"); },700); }
+  return (<div className="fade">
+    <PageHeader title={t("nav_copilot")} sub={t("copilot_sub")}/>
+    <Section title="API Contract → Housing Copilot">
+      <div className="muted" style={{marginBottom:12}}>{t("deliveredItems")} · response &lt; 30s</div>
+      <button className="btn" onClick={deliver}>{sent?("… "+t("opening")):("🤝 "+t("deliver"))}</button>
+      <div className="banner" style={{marginTop:14}}>● {t("redline")}</div>
+    </Section>
+  </div>);
+}
+
+/* ---- action labels (merged into i18n) ---- */
+Object.assign(I18N.en,{ act_submit:"Submitted", act_approve:"Approved (tactical)", act_escalate:"Escalated to Minister", act_adjudicate:"Adjudicated", act_reject:"Rejected" });
+Object.assign(I18N.ar,{ act_submit:"تم الرفع", act_approve:"اعتُمد (تكتيكي)", act_escalate:"رُفع للوزير", act_adjudicate:"تم البتّ", act_reject:"رُفض" });
+
+function nowStr(lang){ return new Date().toLocaleString(lang==="ar"?"ar-SA":"en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
+
+/* =========================================================================
+   Seed mock data (work orders + audit trail) so every role page is populated.
+   ========================================================================= */
+const STATUS_OF = { act_submit:"submitted", act_approve:"approved", act_escalate:"escalated", act_adjudicate:"adjudicated", act_reject:"rejected" };
+function makeKpis(params){ const s=computeAllocation(params); const sv=scenarioSavings(s);
+  return { savingsPhase:sv.phase, pctBudget:sv.pctOfBudget, fg:s.FG, hbr:s.HBR }; }
+const RAW_SEED = [
+  { id:"WO-2026-0312", title:"Q2 reallocation · Riyadh & Makkah", params:{reallocatePct:0.10,boostLowPct:0.08,offPlanPct:0.05}, affectsCap:false, status:"submitted",
+    history:[{role:"analyst",action:"act_submit",ts:"03 Jun 09:12",note:""}] },
+  { id:"WO-2026-0309", title:"Off-plan restriction · national", params:{offPlanPct:0.12,capHighPct:0.10}, affectsCap:true, status:"submitted",
+    history:[{role:"analyst",action:"act_submit",ts:"02 Jun 14:40",note:""}] },
+  { id:"WO-2026-0305", title:"Monthly support rebalancing", params:{reallocatePct:0.12,boostLowPct:0.10,offPlanPct:0.06}, affectsCap:false, status:"approved",
+    history:[{role:"analyst",action:"act_submit",ts:"28 May 10:05",note:""},{role:"owner",action:"act_approve",ts:"29 May 11:20",note:"Within tactical authority"}] },
+  { id:"WO-2026-0299", title:"Support cap revision · >16k band", params:{capHighPct:0.22,reallocatePct:0.18}, affectsCap:true, status:"escalated",
+    history:[{role:"analyst",action:"act_submit",ts:"24 May 08:30",note:""},{role:"owner",action:"act_escalate",ts:"25 May 09:00",note:"Affects support cap"}] },
+  { id:"WO-2026-0288", title:"Phase-3 fairness uplift", params:{reallocatePct:0.25,capHighPct:0.20,boostLowPct:0.15,offPlanPct:0.10}, affectsCap:true, status:"adjudicated",
+    history:[{role:"analyst",action:"act_submit",ts:"18 May 09:00",note:""},{role:"owner",action:"act_escalate",ts:"19 May 10:00",note:""},{role:"minister",action:"act_adjudicate",ts:"21 May 12:30",note:"Approved with monitoring"}] },
+  { id:"WO-2026-0276", title:"Aggressive cap scenario", params:{capHighPct:0.35,offPlanPct:0.20}, affectsCap:true, status:"rejected",
+    history:[{role:"analyst",action:"act_submit",ts:"12 May 08:15",note:""},{role:"owner",action:"act_reject",ts:"13 May 09:40",note:"Too aggressive on >13k bands"}] },
+];
+function seedPackages(){ return RAW_SEED.map(p=>({ ...p, params:{...p.params}, history:p.history.map(h=>({...h})), kpis:makeKpis(p.params) })); }
+function seedAudit(){ const out=[]; RAW_SEED.forEach(p=>p.history.forEach(h=>out.push({ role:h.role, action:h.action, target:p.id, status:STATUS_OF[h.action], ts:h.ts, note:h.note }))); return out.reverse(); }
+
+function App(){
+  const [user,setUserState]=useState(null);
+  const [lang,setLang]=useState("en");
+  const [currency,setCurrency]=useState("SAR");
+  const [route,setRoute]=useState("home");
+  const [packages,setPackages]=useState(seedPackages);
+  const [audit,setAudit]=useState(seedAudit);
+  const t=(k)=> (I18N[lang] && I18N[lang][k]!==undefined) ? I18N[lang][k] : k;
+
+  useEffect(()=>{ const html=document.documentElement; html.lang=lang; html.dir=lang==="ar"?"rtl":"ltr"; },[lang]);
+
+  function setUser(r){ setUserState(r); setRoute(r==="minister"?"cockpit":"home"); }
+  function pushAudit(ev){ setAudit(prev=>[{...ev,ts:nowStr(lang)},...prev]); }
+  function addPackage(data){
+    const ts=nowStr(lang);
+    const id="WO-2026-0"+(400+packages.length);
+    const pkg={ id, status:"submitted",
+      history:[{role:"analyst",action:"act_submit",ts,note:""}], ...data };
+    setPackages(prev=>[pkg,...prev]);
+    pushAudit({role:"analyst",action:"act_submit",target:id,status:"submitted"});
+  }
+  function actOnPackage(id,kind,note){
+    const map={ approve:["approved","act_approve","owner"], escalate:["escalated","act_escalate","owner"],
+      reject:["rejected","act_reject",user], adjudicate:["adjudicated","act_adjudicate","minister"] };
+    const [status,action,role]=map[kind]; const ts=nowStr(lang);
+    setPackages(prev=>prev.map(p=>p.id===id?{...p,status,history:[...p.history,{role,action,ts,note:note||""}]}:p));
+    pushAudit({role,action,target:id,status,note:note||""});
+  }
+  function reset(){ setPackages(seedPackages()); setAudit(seedAudit()); setRoute(user==="minister"?"cockpit":"home"); }
+
+  const store={ t,lang,setLang,currency,setCurrency,user,setUser,route,setRoute,packages,audit,addPackage,actOnPackage,reset };
+
+  if(!user) return (<Ctx.Provider value={store}><Login/></Ctx.Provider>);
+
+  let page=null;
+  if(user==="analyst"){
+    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="forecast"?<ForecastFairness/>
+      : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/> : route==="audit"?<AuditTrailPage/>
+      : route==="copilot"?<CopilotHandoff/> : <AnalystHome/>;
+  } else if(user==="owner"){
+    page = route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
+      : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
+  } else {
+    page = route==="decisions"?<DecisionPackages filter={p=>["escalated","adjudicated","rejected"].includes(p.status)}/>
+      : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
+  }
+  return (<Ctx.Provider value={store}>
+    <TopBar/>
+    <div className="shell"><Sidebar/><div className="content">{page}</div></div>
+  </Ctx.Provider>);
+}
+
+export default App;
