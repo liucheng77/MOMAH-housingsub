@@ -512,9 +512,9 @@ function TopBar(){
 }
 
 const NAV = {
-  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_forecast","📈"],["nav_whatif","✦"],["nav_packages","🗎"],["nav_audit","🕓"],["nav_copilot","🤝"]],
-  owner:[["nav_home","◧"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
-  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_audit","🕓"]],
+  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_forecast","📈"],["nav_whatif","✦"],["nav_packages","📦"],["nav_audit","🕓"],["nav_copilot","🤝"]],
+  owner:[["nav_home","◧"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
+  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_audit","🕓"]],
 };
 function Sidebar(){
   const {t,user,route,setRoute,packages}=useStore();
@@ -549,10 +549,10 @@ function AnalystHome(){
     {ic:"▦", k:"td_alloc",    due:"due_today", chip:"info",  route:"alloc"},
     {ic:"📈", k:"td_forecast", due:"due_3",     chip:"amber", route:"forecast"},
     {ic:"✦", k:"td_whatif",   due:"due_soon",  chip:"gray",  route:"whatif"},
-    {ic:"🗎", k:"td_packages", due:"due_2",     chip:"info",  route:"packages"},
+    {ic:"📦", k:"td_packages", due:"due_2",     chip:"info",  route:"packages"},
     {ic:"🤝", k:"td_copilot",  due:"due_1",     chip:"gray",  route:"copilot"},
   ];
-  const quick=[["nav_alloc","▦","alloc"],["nav_forecast","📈","forecast"],["nav_whatif","✦","whatif"],["nav_packages","🗎","packages"]];
+  const quick=[["nav_alloc","▦","alloc"],["nav_forecast","📈","forecast"],["nav_whatif","✦","whatif"],["nav_packages","📦","packages"]];
   return (<div className="fade">
     <PageHeader title={t("home_hello")+" · "+t("analyst_full")} sub={t("monthlyCycle")}/>
     <div className="cols-4" style={{marginBottom:16}}>
@@ -656,11 +656,41 @@ function DataReadiness(){
 
 /* ---- Allocation ---- */
 function Allocation(){
-  const {t}=useStore(); const {moneyFull}=useMoney();
+  const {t,user,allocation,recalcAlloc,submitAlloc,actAlloc}=useStore(); const {moneyFull}=useMoney();
   const [open,setOpen]=useState(null);
+  const [busy,setBusy]=useState(false); const [note,setNote]=useState(""); const [err,setErr]=useState(false);
+  const a=allocation||{lastSync:"—",recalcAt:null,status:"draft",rejectNote:""};
   const data=BASELINE;
+  function doRecalc(){ setBusy(true); setTimeout(()=>{ recalcAlloc&&recalcAlloc(); setBusy(false); },900); }
+  function doReject(){ if(!note.trim()){ setErr(true); return; } actAlloc&&actAlloc("reject",note.trim()); setNote(""); setErr(false); }
+  const cmap={draft:"gray",submitted:"info",approved:"",rejected:"danger"};
+  const statusChip=<span className={"chip "+(cmap[a.status]||"")}>{t("allocStatus_"+a.status)}</span>;
   return (<div className="fade">
-    <PageHeader title={t("nav_alloc")} sub={t("alloc_sub")}/>
+    <PageHeader title={t("nav_alloc")} sub={t("alloc_sub")} right={statusChip}/>
+    <Section title={t("alloc_autosync")}>
+      <div className="cols-3" style={{marginBottom:14}}>
+        <div><div className="muted" style={{fontSize:12}}>{t("lastSyncAt")}</div><div style={{fontWeight:700,marginTop:3}}>{a.lastSync}</div></div>
+        <div><div className="muted" style={{fontSize:12}}>{t("lastRecalc")}</div><div style={{fontWeight:700,marginTop:3}}>{a.recalcAt||"—"}</div></div>
+        <div><div className="muted" style={{fontSize:12}}>{t("status")}</div><div style={{marginTop:5}}><span className={"chip "+(cmap[a.status]||"")}>{t("allocStatus_"+a.status)}</span></div></div>
+      </div>
+      {a.status==="rejected"&&a.rejectNote&&<div className="banner" style={{marginBottom:12,background:"var(--danger-50)",borderColor:"#f0b4ad",color:"#7a241d"}}>✕ {t("rejectReason")}: {a.rejectNote}</div>}
+      {user==="analyst"&&<div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+        <button className="btn secondary sm" onClick={doRecalc} disabled={busy}>{busy?t("recalculating"):("↻ "+t("recalc"))}</button>
+        {(a.status==="draft"||a.status==="rejected")&&<button className="btn sm" onClick={()=>submitAlloc&&submitAlloc()}>✔ {t("approveSubmit")}</button>}
+        {a.status==="submitted"&&<span className="chip info">⏳ {t("allocStatus_submitted")}</span>}
+        {a.status==="approved"&&<span className="chip">✓ {t("allocStatus_approved")}</span>}
+      </div>}
+      {user==="owner"&&(a.status==="submitted"?<div>
+        <input className="input" placeholder={t("rejectReasonPh")} value={note} onChange={e=>{setNote(e.target.value);setErr(false);}} style={{marginBottom:err?4:10}}/>
+        {err&&<div style={{color:"var(--danger)",fontSize:12,marginBottom:8}}>{t("needReason")}</div>}
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="btn sm" onClick={()=>actAlloc&&actAlloc("approve")}>✔ {t("approve")}</button>
+          <button className="btn danger sm" onClick={doReject}>✕ {t("reject")}</button>
+        </div>
+      </div> : a.status==="approved"?<span className="chip">✓ {t("allocStatus_approved")}</span>
+        : a.status==="rejected"?<span className="chip danger">✕ {t("allocStatus_rejected")}</span>
+        : <div className="muted" style={{fontSize:13}}>{t("notSubmittedYet")}</div>)}
+    </Section>
     <Section title={t("monthlyCycle")} right={<span className="chip">{t("kpi_budget")}: {(data.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)}%</span>}>
       <div className="scrollx"><table className="tbl">
         <thead><tr><th>{t("incomeBand")}</th><th className="right-num">{t("contracts")}</th><th className="right-num">{t("subsidy")}</th><th className="right-num">{t("share")}</th><th></th></tr></thead>
@@ -685,7 +715,7 @@ function Allocation(){
 
 /* ---- Forecast & Fairness ---- */
 function ForecastFairness(){
-  const {t}=useStore(); const {money}=useMoney();
+  const {t,user,leaks,leakAct}=useStore(); const {money}=useMoney();
   const scn=BASELINE; const fc=useMemo(()=>buildForecast(scn),[]);
   const regions=useMemo(()=>fgByRegion(scn.FG),[]);
   const C=RC; const ok=!!RC.ResponsiveContainer;
@@ -715,31 +745,60 @@ function ForecastFairness(){
         </C.ResponsiveContainer>}
       </div>
     </Section>
-    <div className="cols-2">
-      <Section title={t("fairnessByRegion")}>
-        <div style={{width:"100%",height:300}}>
-          {!ok? noChart :
-          <C.ResponsiveContainer>
-            <C.BarChart data={regions.map(r=>({name:t("rg_"+r.key),fg:r.fg}))} margin={{top:4,right:8,left:0,bottom:4}}>
-              <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
-              <C.XAxis dataKey="name" tick={{fontSize:9}} interval={0} angle={-30} textAnchor="end" height={60}/>
-              <C.YAxis tick={{fontSize:11}} domain={[0,1.4]}/>
-              <C.Tooltip/>
-              <C.ReferenceLine y={1.0} stroke="#006C35" strokeDasharray="4 4"/>
-              <C.Bar dataKey="fg" radius={[3,3,0,0]}>
-                {regions.map((r,i)=><C.Cell key={i} fill={r.fg>=1?"#006C35":r.fg>=0.9?"#9a6b00":"#b3261e"}/>)}
-              </C.Bar>
-            </C.BarChart>
-          </C.ResponsiveContainer>}
-        </div>
-      </Section>
-      <Section title={t("leakage")}>
-        {[["Riyadh · off-plan cluster","danger","2.3%"],["Makkah · duplicate benefit","amber","0.8%"],["Eastern · price drift","info","1.1%"]].map((x,i)=>(
-          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:"1px solid var(--line)"}}>
-            <span>{x[0]}</span><span className={"chip "+x[1]}>{x[2]}</span></div>))}
-        <div className="muted" style={{fontSize:12,marginTop:10}}>{t("redline")}</div>
-      </Section>
-    </div>
+    <Section title={t("fairnessByRegion")}>
+      <div style={{width:"100%",height:300}}>
+        {!ok? noChart :
+        <C.ResponsiveContainer>
+          <C.BarChart data={regions.map(r=>({name:t("rg_"+r.key),fg:r.fg}))} margin={{top:4,right:8,left:0,bottom:4}}>
+            <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
+            <C.XAxis dataKey="name" tick={{fontSize:10}} interval={0} angle={-30} textAnchor="end" height={64}/>
+            <C.YAxis tick={{fontSize:11}} domain={[0,1.4]}/>
+            <C.Tooltip/>
+            <C.ReferenceLine y={1.0} stroke="#006C35" strokeDasharray="4 4"/>
+            <C.Bar dataKey="fg" radius={[3,3,0,0]}>
+              {regions.map((r,i)=><C.Cell key={i} fill={r.fg>=1?"#006C35":r.fg>=0.9?"#9a6b00":"#b3261e"}/>)}
+            </C.Bar>
+          </C.BarChart>
+        </C.ResponsiveContainer>}
+      </div>
+    </Section>
+    <Section title={t("leakage")} sub={t("leak_routeHint")}>
+      {leaks.map(l=>{
+        const big=l.cases>100;
+        const canA=user==="analyst"&&l.status==="detected";
+        const canO=user==="owner"&&l.status==="submitted";
+        const canM=user==="minister"&&l.status==="escalated";
+        const sChip={detected:"gray",submitted:"info",adopted:"",escalated:"amber",adjudicated:"",rejected:"danger"};
+        return (<div key={l.id} className="leak-card">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span className="wo">#{l.id}</span>
+              <span className={"chip "+l.sev}>{t("leakSev_"+l.sev)}</span>
+              <strong style={{fontSize:13}}>{l.k}</strong>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span className="chip gray">{n0(l.cases)} {t("leak_cases")}</span>
+              <span className={"chip "+(sChip[l.status]||"")}>{t("leakStatus_"+l.status)}</span>
+            </div>
+          </div>
+          {big&&(l.status==="detected"||l.status==="submitted")&&<div className="banner" style={{marginTop:8}}>⚖ {t("leak_big")}</div>}
+          {(canA||canO||canM)&&<div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:10}}>
+            {canA&&<button className="btn sm" onClick={()=>leakAct(l.id,"report")}>↑ {t("leak_report")}</button>}
+            {canO&&big&&<button className="btn sm" onClick={()=>leakAct(l.id,"escalate")}>⚖ {t("escalate")}</button>}
+            {canO&&!big&&<button className="btn sm" onClick={()=>leakAct(l.id,"adopt")}>✔ {t("approve")}</button>}
+            {canO&&<button className="btn danger sm" onClick={()=>leakAct(l.id,"reject")}>✕ {t("reject")}</button>}
+            {canM&&<button className="btn sm" onClick={()=>leakAct(l.id,"adjudicate")}>⚖ {t("adjudicate")}</button>}
+            {canM&&<button className="btn danger sm" onClick={()=>leakAct(l.id,"reject")}>✕ {t("reject")}</button>}
+          </div>}
+          {l.history.length>0&&<div className="timeline" style={{marginTop:12}}>
+            {l.history.map((h,i)=>(<div key={i} className="ev"><div style={{fontSize:12.5}}>
+              <span className="tag">{t(h.role)}</span> <b>{t(LEAK_KIND_KEY[h.kind])}</b> {h.note?("· "+h.note):""}</div>
+              <div className="muted" style={{fontSize:11}}>{h.ts}</div></div>))}
+          </div>}
+        </div>);
+      })}
+      <div className="muted" style={{fontSize:12,marginTop:10}}>{t("redline")}</div>
+    </Section>
   </div>);
 }
 
@@ -892,7 +951,7 @@ function WhatIf(){
         </Section>
       </div>
     </div>
-    {user==="analyst"&&<button className="btn" style={{marginTop:4}} onClick={assemble}>🗎 {t("assembleFromHere")}</button>}
+    {user==="analyst"&&<button className="btn" style={{marginTop:4}} onClick={assemble}>📦 {t("assembleFromHere")}</button>}
   </div>);
 }
 
@@ -1167,8 +1226,26 @@ I18N.zh = {
 Object.assign(I18N.zh,{ act_submit:"已提交", act_approve:"已采纳（战术）", act_escalate:"已上报部长", act_adjudicate:"已裁决", act_reject:"已驳回" });
 Object.assign(I18N.en,{ act_submit:"Submitted", act_approve:"Approved (tactical)", act_escalate:"Escalated to Minister", act_adjudicate:"Adjudicated", act_reject:"Rejected" });
 Object.assign(I18N.ar,{ act_submit:"تم الرفع", act_approve:"اعتُمد (تكتيكي)", act_escalate:"رُفع للوزير", act_adjudicate:"تم البتّ", act_reject:"رُفض" });
+Object.assign(I18N.en,{ alloc_autosync:"Monthly auto-sync · 1st at 06:00", lastSyncAt:"Last sync", recalc:"Recalculate", recalculating:"Recalculating…", lastRecalc:"Last recalculated", approveSubmit:"Approve & submit", allocStatus_draft:"Draft", allocStatus_submitted:"Awaiting Business Owner", allocStatus_approved:"Approved", allocStatus_rejected:"Rejected", rejectReason:"Rejection reason", rejectReasonPh:"Enter a reason for rejection…", needReason:"A rejection reason is required.", notSubmittedYet:"The analyst has not submitted the plan yet." });
+Object.assign(I18N.zh,{ alloc_autosync:"月度自动同步 · 每月 1 日 06:00", lastSyncAt:"上次同步", recalc:"重算", recalculating:"重算中…", lastRecalc:"上次重算", approveSubmit:"审阅通过并上报", allocStatus_draft:"草稿", allocStatus_submitted:"待业务负责人", allocStatus_approved:"已采纳", allocStatus_rejected:"已驳回", rejectReason:"驳回理由", rejectReasonPh:"请填写驳回理由…", needReason:"请填写驳回理由。", notSubmittedYet:"分析师尚未上报该方案。" });
+Object.assign(I18N.ar,{ alloc_autosync:"مزامنة شهرية تلقائية · اليوم 1 الساعة 06:00", lastSyncAt:"آخر مزامنة", recalc:"إعادة الحساب", recalculating:"جارٍ إعادة الحساب…", lastRecalc:"آخر إعادة حساب", approveSubmit:"اعتماد ورفع", allocStatus_draft:"مسودة", allocStatus_submitted:"بانتظار مالك الأعمال", allocStatus_approved:"معتمد", allocStatus_rejected:"مرفوض", rejectReason:"سبب الرفض", rejectReasonPh:"اكتب سبب الرفض…", needReason:"سبب الرفض مطلوب.", notSubmittedYet:"لم يرفع المحلل الخطة بعد." });
+Object.assign(I18N.en,{ ff_how:"How it works · roles & data", ff_process:"Process", ff_processText:"Pull the actual distribution from BIDSC and compare it with the allocation plan → compute the multi-dimensional Fairness Gap → run leakage-detection models → produce the monthly report → route alerts to the decision chain.", ff_roles:"Roles", ff_inputs:"Data inputs", role_agent:"Agent (automatic)", role_audit:"Audit team", ff_agentDuty:"Computes the Fairness Gap, runs leakage models, produces the monthly report and alerts.", ff_analystDuty:"Reviews the Fairness Gap report and alerts; can trigger a check manually.", ff_ownerDuty:"Adopts action on detected leakage — a confirmed leak is escalated within 24h.", ff_ministerDuty:"Adjudicates large-scale leakage — over 100 cases, within 4h.", ff_auditDuty:"Reviews leakage reports; the monthly report is stored in the Audit Trail.", ff_inputBidsc:"Actual distribution (BIDSC)", ff_inputPlan:"Allocation plan", ff_inputSeg:"Income band & region", ff_inputTrack:"Beneficiary-review alerts", ff_sla:"Confirmed leak → Business Owner within 24h · Leak affecting >100 cases → Minister within 4h · Support is never auto-suspended — the decision is always human." });
+Object.assign(I18N.zh,{ ff_how:"运作方式 · 分工与数据", ff_process:"流程", ff_processText:"从 BIDSC 取实际分配并与配分方案对比 → 计算多维公平性差距 → 跑漏损检测模型 → 出月度报告 → 将告警分级路由。", ff_roles:"分工", ff_inputs:"数据来源", role_agent:"智能体（自动）", role_audit:"审计团队", ff_agentDuty:"计算公平性差距、运行漏损模型、产出月度报告与告警。", ff_analystDuty:"审阅公平性差距报告与告警；可手工触发监测。", ff_ownerDuty:"对检测到的漏损采纳处置——确认漏损 24 小时内上报。", ff_ministerDuty:"裁决大规模漏损——超过 100 个案例，4 小时内升级。", ff_auditDuty:"复核漏损报告；月度报告存入审计轨迹。", ff_inputBidsc:"实际分配（BIDSC）", ff_inputPlan:"配分方案", ff_inputSeg:"收入档与地区", ff_inputTrack:"受益人复核告警", ff_sla:"确认漏损 → 业务负责人 24 小时内 · 影响 >100 案例 → 部长 4 小时内 · 绝不自动停补——决定永远在人。" });
+Object.assign(I18N.ar,{ ff_how:"آلية العمل · الأدوار والبيانات", ff_process:"العملية", ff_processText:"سحب التوزيع الفعلي من BIDSC ومقارنته بخطة التخصيص ← حساب فجوة العدالة متعددة الأبعاد ← تشغيل نماذج كشف التسرب ← إنتاج التقرير الشهري ← توجيه التنبيهات.", ff_roles:"الأدوار", ff_inputs:"مصادر البيانات", role_agent:"الوكيل (آلي)", role_audit:"فريق التدقيق", ff_agentDuty:"يحسب فجوة العدالة، ويشغّل نماذج التسرب، ويُنتج التقرير الشهري والتنبيهات.", ff_analystDuty:"يراجع تقرير فجوة العدالة والتنبيهات؛ يمكنه تشغيل الفحص يدوياً.", ff_ownerDuty:"يعتمد إجراءً عند كشف تسرب — يُرفع التسرب المؤكد خلال ٢٤ ساعة.", ff_ministerDuty:"يبتّ في التسرب واسع النطاق — أكثر من ١٠٠ حالة، خلال ٤ ساعات.", ff_auditDuty:"يراجع تقارير التسرب؛ يُحفظ التقرير الشهري في سجل التدقيق.", ff_inputBidsc:"التوزيع الفعلي (BIDSC)", ff_inputPlan:"خطة التخصيص", ff_inputSeg:"شريحة الدخل والمنطقة", ff_inputTrack:"تنبيهات مراجعة المستفيدين", ff_sla:"تسرب مؤكد ← مالك الأعمال خلال ٢٤ ساعة · تسرب يؤثر على أكثر من ١٠٠ حالة ← الوزير خلال ٤ ساعات · لا يُوقف الدعم آلياً — القرار دائماً بشري." });
+Object.assign(I18N.en,{ leak_report:"Report", leak_cases:"cases", leak_big:"Large-scale (>100 cases) — must escalate to the Minister", leak_routeHint:"Confirmed leak → Business Owner within 24h · >100 cases → Minister within 4h · Support is never auto-suspended.", leakSev_danger:"Confirmed", leakSev_amber:"Likely", leakSev_info:"Warning", leakStatus_detected:"Detected", leakStatus_submitted:"Awaiting Business Owner", leakStatus_adopted:"Action adopted", leakStatus_escalated:"Awaiting Minister", leakStatus_adjudicated:"Adjudicated", leakStatus_rejected:"Dismissed" });
+Object.assign(I18N.zh,{ leak_report:"上报", leak_cases:"案例", leak_big:"大规模（>100 案例）— 必须上报部长", leak_routeHint:"确认漏损 → 业务负责人 24 小时内 · >100 案例 → 部长 4 小时内 · 绝不自动停补。", leakSev_danger:"确认", leakSev_amber:"疑似", leakSev_info:"警示", leakStatus_detected:"已检测", leakStatus_submitted:"待业务负责人", leakStatus_adopted:"已采纳处置", leakStatus_escalated:"待部长", leakStatus_adjudicated:"已裁决", leakStatus_rejected:"已驳回" });
+Object.assign(I18N.ar,{ leak_report:"رفع", leak_cases:"حالات", leak_big:"واسع النطاق (>١٠٠ حالة) — يجب الرفع للوزير", leak_routeHint:"تسرب مؤكد ← مالك الأعمال خلال ٢٤ ساعة · >١٠٠ حالة ← الوزير خلال ٤ ساعات · لا يُوقف الدعم آلياً.", leakSev_danger:"مؤكد", leakSev_amber:"محتمل", leakSev_info:"تحذير", leakStatus_detected:"تم الكشف", leakStatus_submitted:"بانتظار مالك الأعمال", leakStatus_adopted:"تم اعتماد الإجراء", leakStatus_escalated:"بانتظار الوزير", leakStatus_adjudicated:"تم البتّ", leakStatus_rejected:"مرفوض" });
 
 function nowStr(lang){ return new Date().toLocaleString(lang==="ar"?"ar-SA":"en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
+
+/* ---- Leakage alerts: detected → analyst Report → Business Owner adopt/escalate → Minister adjudicate ---- */
+const RAW_LEAKS = [
+  { id:"LK-2026-021", k:"Riyadh · off-plan cluster",  sev:"danger", cases:140, status:"detected",  history:[] },
+  { id:"LK-2026-022", k:"Makkah · duplicate benefit", sev:"amber",  cases:36,  status:"submitted", history:[{role:"analyst",kind:"report",ts:"02 Jun 09:10",note:""}] },
+  { id:"LK-2026-023", k:"Eastern · price drift",      sev:"info",   cases:12,  status:"detected",  history:[] },
+];
+function seedLeaks(){ return RAW_LEAKS.map(l=>({ ...l, history:l.history.map(h=>({...h})) })); }
+const LEAK_KIND_KEY = { report:"leak_report", adopt:"approve", escalate:"escalate", adjudicate:"adjudicate", reject:"reject" };
 
 /* =========================================================================
    Seed mock data (work orders + audit trail) so every role page is populated.
@@ -1196,10 +1273,12 @@ function seedAudit(){ const out=[]; RAW_SEED.forEach(p=>p.history.forEach(h=>out
 function App(){
   const [user,setUserState]=useState(null);
   const [lang,setLang]=useState(()=>{ try{ const q=new URLSearchParams(window.location.search).get("ln"); if(q==="zh"||q==="ar"||q==="en") return q; }catch(e){} return "en"; });
-  const [currency,setCurrency]=useState("SAR");
+  const [currency,setCurrency]=useState("symbol");
   const [route,setRoute]=useState("home");
   const [packages,setPackages]=useState(seedPackages);
   const [audit,setAudit]=useState(seedAudit);
+  const [allocation,setAllocation]=useState({lastSync:"2026-06-01 06:00", recalcAt:null, status:"draft", rejectNote:"", at:null});
+  const [leaks,setLeaks]=useState(seedLeaks);
   const t=(k)=>{ const d=I18N[lang]; if(d && d[k]!==undefined) return d[k]; const e=I18N.en; return (e && e[k]!==undefined) ? e[k] : k; };
 
   useEffect(()=>{ const html=document.documentElement; html.lang=lang; html.dir=lang==="ar"?"rtl":"ltr"; },[lang]);
@@ -1221,9 +1300,17 @@ function App(){
     setPackages(prev=>prev.map(p=>p.id===id?{...p,status,history:[...p.history,{role,action,ts,note:note||""}]}:p));
     pushAudit({role,action,target:id,status,note:note||""});
   }
-  function reset(){ setPackages(seedPackages()); setAudit(seedAudit()); setRoute(user==="minister"?"cockpit":"home"); }
+  function recalcAlloc(){ setAllocation(a=>({...a, recalcAt:nowStr(lang), status:"draft", rejectNote:"", at:null})); }
+  function submitAlloc(){ setAllocation(a=>({...a, status:"submitted", at:nowStr(lang), rejectNote:""})); }
+  function actAlloc(kind,note){ setAllocation(a=>({...a, status:kind==="approve"?"approved":"rejected", rejectNote:kind==="reject"?(note||""):"", at:nowStr(lang)})); }
+  function leakAct(id,kind,note){
+    const map={ report:["submitted","analyst"], adopt:["adopted","owner"], escalate:["escalated","owner"], adjudicate:["adjudicated","minister"], reject:["rejected",user] };
+    const [status,role]=map[kind]; const ts=nowStr(lang);
+    setLeaks(prev=>prev.map(l=>l.id===id?{...l,status,history:[...l.history,{role,kind,ts,note:note||""}]}:l));
+  }
+  function reset(){ setPackages(seedPackages()); setAudit(seedAudit()); setAllocation({lastSync:"2026-06-01 06:00", recalcAt:null, status:"draft", rejectNote:"", at:null}); setLeaks(seedLeaks()); setRoute(user==="minister"?"cockpit":"home"); }
 
-  const store={ t,lang,setLang,currency,setCurrency,user,setUser,route,setRoute,packages,audit,addPackage,actOnPackage,reset };
+  const store={ t,lang,setLang,currency,setCurrency,user,setUser,route,setRoute,packages,audit,addPackage,actOnPackage,reset,allocation,recalcAlloc,submitAlloc,actAlloc,leaks,leakAct };
 
   if(!user) return (<Ctx.Provider value={store}><Login/></Ctx.Provider>);
 
@@ -1233,11 +1320,11 @@ function App(){
       : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/> : route==="audit"?<AuditTrailPage/>
       : route==="copilot"?<CopilotHandoff/> : <AnalystHome/>;
   } else if(user==="owner"){
-    page = route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
+    page = route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
       : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
   } else {
     page = route==="decisions"?<DecisionPackages filter={p=>["escalated","adjudicated","rejected"].includes(p.status)}/>
-      : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
+      : route==="forecast"?<ForecastFairness/> : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
   }
   return (<Ctx.Provider value={store}>
     <TopBar/>
