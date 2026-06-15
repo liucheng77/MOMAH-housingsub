@@ -14,7 +14,8 @@ body{
 }
 html[dir="rtl"] body{font-family:"IBM Plex Sans Arabic",system-ui,Arial,sans-serif}
 #root{height:100%}
-button{font-family:inherit;cursor:pointer}
+button,input,select,textarea{font-family:"IBM Plex Sans Arabic",inherit}
+button{cursor:pointer}
 a{color:inherit}
 h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .muted{color:var(--muted)}
@@ -51,7 +52,7 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .kpi-good::before{background:var(--green);opacity:1}
 .kpi-bad::before{background:var(--danger);opacity:1}
 .kpi-warn::before{background:var(--amber);opacity:1}
-.kpi .label{font-size:13.5px;color:var(--muted);font-weight:600;letter-spacing:.01em}
+.kpi .label{font-size:13.5px;color:var(--muted);font-weight:700;letter-spacing:.01em}
 .kpi .value{font-size:32px;font-weight:800;margin-top:10px;line-height:1.05;letter-spacing:-.5px}
 .kpi .sub{font-size:13.5px;margin-top:10px;color:var(--muted);font-weight:700}
 .grid{display:grid;gap:16px}
@@ -234,8 +235,15 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .modal-body{padding:20px}
 .pkg-detail{margin-top:12px;padding:12px 14px;background:#f8fbf9;border:1px solid var(--line);border-radius:10px}
 .leak-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.dr-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media(max-width:1100px){.dr-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.dr-strip{grid-template-columns:repeat(2,1fr)}}
 .mini-kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .mini-kpi .v{font-weight:700;font-size:16px;margin-top:2px}
+.mini-kpi>.muted{font-weight:700;color:#46544c}
+.dropzone{border:2px dashed var(--green-100);border-radius:12px;padding:28px 20px;text-align:center;background:var(--green-50);cursor:pointer;color:var(--green-dark);transition:border-color .15s,background .15s}
+.dropzone:hover,.dropzone.over{border-color:var(--green);background:#eafaf0}
+.dropzone .di{font-size:30px;margin-bottom:8px;line-height:1}
 
 /* ---- Balady SSO login (matched to reference layout) ---- */
 .bld-login{position:relative;height:100%;min-height:100%;overflow:hidden;color:#161616}
