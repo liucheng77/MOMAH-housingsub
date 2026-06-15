@@ -25,7 +25,8 @@ body{
 }
 html[dir="rtl"] body{font-family:"IBM Plex Sans Arabic",system-ui,Arial,sans-serif}
 #root{height:100%}
-button{font-family:inherit;cursor:pointer}
+button,input,select,textarea{font-family:"IBM Plex Sans Arabic",inherit}
+button{cursor:pointer}
 a{color:inherit}
 h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .muted{color:var(--muted)}
@@ -62,7 +63,7 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .kpi-good::before{background:var(--green);opacity:1}
 .kpi-bad::before{background:var(--danger);opacity:1}
 .kpi-warn::before{background:var(--amber);opacity:1}
-.kpi .label{font-size:13.5px;color:var(--muted);font-weight:600;letter-spacing:.01em}
+.kpi .label{font-size:13.5px;color:var(--muted);font-weight:700;letter-spacing:.01em}
 .kpi .value{font-size:32px;font-weight:800;margin-top:10px;line-height:1.05;letter-spacing:-.5px}
 .kpi .sub{font-size:13.5px;margin-top:10px;color:var(--muted);font-weight:700}
 .grid{display:grid;gap:16px}
@@ -245,8 +246,15 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .modal-body{padding:20px}
 .pkg-detail{margin-top:12px;padding:12px 14px;background:#f8fbf9;border:1px solid var(--line);border-radius:10px}
 .leak-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.dr-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+@media(max-width:1100px){.dr-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.dr-strip{grid-template-columns:repeat(2,1fr)}}
 .mini-kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .mini-kpi .v{font-weight:700;font-size:16px;margin-top:2px}
+.mini-kpi>.muted{font-weight:700;color:#46544c}
+.dropzone{border:2px dashed var(--green-100);border-radius:12px;padding:28px 20px;text-align:center;background:var(--green-50);cursor:pointer;color:var(--green-dark);transition:border-color .15s,background .15s}
+.dropzone:hover,.dropzone.over{border-color:var(--green);background:#eafaf0}
+.dropzone .di{font-size:30px;margin-bottom:8px;line-height:1}
 
 /* ---- Balady SSO login (matched to reference layout) ---- */
 .bld-login{position:relative;height:100%;min-height:100%;overflow:hidden;color:#161616}
@@ -501,7 +509,7 @@ const I18N = {
     logout:"Sign out", language:"Language", currency:"Currency", resetDemo:"Reset demo",
     // roles
     analyst:"Analyst", owner:"Business Owner", minister:"Minister",
-    analyst_full:"Housing Support Analyst", owner_full:"Business Owner (Executive)", minister_full:"His Excellency the Minister",
+    analyst_full:"Analyst", owner_full:"Business Owner", minister_full:"Minister",
     analyst_desc:"Runs analyses, What-if, assembles & submits decision packages.",
     owner_desc:"Reviews and approves tactical recommendations.",
     minister_desc:"Adjudicates strategic items (caps / internal regulations).",
@@ -587,7 +595,7 @@ const I18N = {
     loginHint:"كلمة المرور مُعبّأة للعرض (بدون مصادقة فعلية).", enter:"دخول",
     logout:"تسجيل الخروج", language:"اللغة", currency:"العملة", resetDemo:"إعادة ضبط العرض",
     analyst:"محلل", owner:"مالك الأعمال", minister:"الوزير",
-    analyst_full:"محلل الدعم السكني", owner_full:"مالك الأعمال (تنفيذي)", minister_full:"معالي الوزير",
+    analyst_full:"محلل", owner_full:"مالك الأعمال", minister_full:"الوزير",
     analyst_desc:"يشغّل التحليلات والمحاكاة ويُجمّع حزم القرار ويرفعها.",
     owner_desc:"يراجع ويعتمد التوصيات التكتيكية.",
     minister_desc:"يبتّ في البنود الاستراتيجية (السقوف / اللوائح الداخلية).",
@@ -832,7 +840,7 @@ function TopBar(){
 
 const NAV = {
   analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_forecast","📈"],["nav_whatif","✦"],["nav_packages","📦"],["nav_audit","🕓"],["nav_copilot","🤝"]],
-  owner:[["nav_home","◧"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
+  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
   minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_audit","🕓"]],
 };
 function Sidebar(){
@@ -904,11 +912,16 @@ function ParticleBurst(){
   return <span className="burst" aria-hidden="true">{parts.map((p,i)=><i key={i} style={{"--dx":p.dx+"px","--dy":p.dy+"px","--d":p.d+"s"}}/>)}</span>;
 }
 function DataReadiness(){
-  const {t}=useStore();
+  const {t,user,budget,saveBudget,lang}=useStore();
   const [sources,setSources]=useState(DATA_SOURCES);
   const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
   const [flash,setFlash]=useState(false); const [ranOnce,setRanOnce]=useState(false);
   const [burst,setBurst]=useState(0); const [shake,setShake]=useState(false);
+  const [exc,setExc]=useState(4.2); const [uploaded,setUploaded]=useState(null);
+  const [bform,setBform]=useState({cash:budget.cash, inkind:budget.inkind, ceiling:budget.ceiling}); const [saved,setSaved]=useState(false);
+  const [syncTime,setSyncTime]=useState("2026-06-15 06:00"); const [syncOk]=useState(true);
+  const [showUp,setShowUp]=useState(false); const [file,setFile]=useState(null); const [checking,setChecking]=useState(false); const [chk,setChk]=useState(null); const [over,setOver]=useState(false);
+  const fileRef=useRef(null);
   function run(){
     setRunning(true); setDone(false); setProg(0); setFlash(false);
     setBurst(Date.now()); setShake(true); setTimeout(()=>setShake(false),450);
@@ -922,16 +935,49 @@ function DataReadiness(){
           delta: +(Math.random()*1.7 - 0.3).toFixed(1),
           updated: s.status==="ok" ? "Just now" : s.updated,
         })));
+        setExc(+(3+Math.random()*3).toFixed(1)); setSyncTime(nowStr(lang));
         setFlash(true); setTimeout(()=>setFlash(false), 1300);
       }
     },110);
   }
+  function pickFile(name){ setFile(name); setChk(null); setChecking(true);
+    setTimeout(()=>{ const comp=86+Math.floor(Math.random()*12); const ex=+(2+Math.random()*9).toFixed(1); const recs=8000+Math.floor(Math.random()*4000); setChk({comp,ex,recs,valid:comp>=90&&ex<=10}); setChecking(false); },1100);
+  }
+  function doImport(){ setUploaded(file+" · "+nowStr("en")); setShowUp(false); setFile(null); setChk(null); }
+  const totalRecords=sources.reduce((s,x)=>s+x.records,0);
+  const avgComp=Math.round(sources.reduce((s,x)=>s+x.completeness,0)/sources.length);
+  const qkey=exc>10?"qExc":avgComp<90?"qBelow":"qOk";
+  const qtone=qkey==="qOk"?"good":qkey==="qBelow"?"warn":"bad";
   return (<div className={"fade"+(shake?" page-shake":"")}>
-    <PageHeader title={t("nav_data")} sub={t("data_sub")}
-      right={<span className="btn-burst-wrap">
-        <button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>
-        {burst?<ParticleBurst key={burst}/>:null}
-      </span>}/>
+    <PageHeader title={t("nav_data")} sub={<span style={{color:syncOk?"var(--green)":"var(--danger)",fontWeight:700}}>{(syncOk?"✓ ":"✕ ")+t(syncOk?"syncOk":"syncFail")+" · "+t("lastSyncAt")+": "+syncTime}</span>}
+      right={<div style={{display:"flex",gap:8,alignItems:"center"}}>
+        {user==="analyst"&&<button className="btn secondary sm" onClick={()=>setShowUp(true)}><svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></svg> {t("uploadBidsc")}</button>}
+        <span className="btn-burst-wrap">
+          <button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>
+          {burst?<ParticleBurst key={burst}/>:null}
+        </span>
+      </div>}/>
+    {user==="analyst"&&uploaded&&<div className="banner" style={{marginBottom:14}}>✓ {uploaded} — {t("uploadedOk")} · <span className="muted">{t("uploadHint")}</span></div>}
+    <Section title={t("qreport")+" · "+t("budgetBalance")} right={<span className={"chip "+(qtone==="good"?"":qtone==="warn"?"amber":"danger")}>{t(qkey)}</span>}>
+      <div className="dr-strip">
+        <div className="mini-kpi"><div className="muted" style={{fontSize:11.5}}>{t("totalRecords")}</div><div className="v">{n0(totalRecords)}</div></div>
+        <div className="mini-kpi"><div className="muted" style={{fontSize:11.5}}>{t("avgCompleteness")}</div><div className="v" style={{color:avgComp>=90?"var(--green)":"var(--amber)"}}>{avgComp}%</div></div>
+        <div className="mini-kpi"><div className="muted" style={{fontSize:11.5}}>{t("exceptions")}</div><div className="v" style={{color:exc>10?"var(--danger)":"var(--green)"}}>{exc}%</div></div>
+        {[["cash","bud_cash"],["inkind","bud_inkind"],["ceiling","bud_ceiling"]].map(([f,lk])=>(
+          <div key={f} className="mini-kpi">
+            <div className="muted" style={{fontSize:11.5}}>{t(lk)}</div>
+            {user==="owner"
+              ? <input className="input mono" style={{height:30,padding:"0 8px",marginTop:4,fontSize:14,width:"100%"}} type="number" value={bform[f]} onChange={e=>{setBform({...bform,[f]:e.target.value});setSaved(false);}}/>
+              : <div className="v">{budget[f]}<span className="muted" style={{fontSize:11,fontWeight:400}}> {t("mSar")}</span></div>}
+          </div>))}
+      </div>
+      {user==="owner"&&<div style={{display:"flex",alignItems:"center",gap:12,marginTop:12,flexWrap:"wrap"}}>
+        <button className="btn sm" onClick={()=>{saveBudget({cash:+bform.cash,inkind:+bform.inkind,ceiling:+bform.ceiling});setSaved(true);}}>💾 {t("saveBalance")}</button>
+        {saved&&<span className="chip">✓ {t("done")}</span>}
+        <span className="muted" style={{fontSize:12}}>{t("enteredBy")}: {t(budget.enteredBy)} · {budget.enteredAt}</span>
+      </div>}
+      {budget.daysSince>30&&<div className="banner" style={{marginTop:12,background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("budStale")}</div>}
+    </Section>
     <Section title="BIDSC">
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
         <div style={{flex:1}}><Progress v={prog/100}/></div>
@@ -970,6 +1016,30 @@ function DataReadiness(){
         </div>);
       })}
     </div>
+    {showUp&&<Modal title={t("importTitle")} onClose={()=>{setShowUp(false);setFile(null);setChk(null);}}>
+      <div className={"dropzone"+(over?" over":"")}
+        onDragOver={e=>{e.preventDefault();setOver(true);}}
+        onDragLeave={()=>setOver(false)}
+        onDrop={e=>{e.preventDefault();setOver(false);const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)pickFile(f.name);}}
+        onClick={()=>fileRef.current&&fileRef.current.click()}>
+        <div className="di">⬆</div>
+        <div style={{fontWeight:700}}>{t("dropHint")}</div>
+        <input ref={fileRef} type="file" style={{display:"none"}} onChange={e=>{const f=e.target.files&&e.target.files[0];if(f)pickFile(f.name);}}/>
+      </div>
+      {file&&<div style={{marginTop:16}}>
+        <div style={{fontSize:13,marginBottom:10}}><b>{t("fileLabel")}:</b> {file}</div>
+        {checking ? <div className="ai-working">⟳ {t("validating")}</div>
+          : chk && <div>
+            <div className="cols-3" style={{marginBottom:12}}>
+              <div className="mini-kpi"><div className="muted">{t("records")}</div><div className="v">{n0(chk.recs)}</div></div>
+              <div className="mini-kpi"><div className="muted">{t("completeness")}</div><div className="v" style={{color:chk.comp>=90?"var(--green)":"var(--danger)"}}>{chk.comp}%</div></div>
+              <div className="mini-kpi"><div className="muted">{t("exceptions")}</div><div className="v" style={{color:chk.ex<=10?"var(--green)":"var(--danger)"}}>{chk.ex}%</div></div>
+            </div>
+            <div className="banner" style={chk.valid?{}:{background:"var(--danger-50)",borderColor:"#f0b4ad",color:"#7a241d"}}>{chk.valid?("✓ "+t("checkPass")):("✕ "+t("checkFail"))}</div>
+            {chk.valid && <button className="btn" style={{marginTop:12,width:"100%",justifyContent:"center"}} onClick={doImport}>⬆ {t("importBtn")}</button>}
+          </div>}
+      </div>}
+    </Modal>}
   </div>);
 }
 
@@ -1479,7 +1549,7 @@ I18N.zh = {
   login:"登录", username:"用户名", password:"密码", chooseRole:"选择演示身份",
   loginHint:"演示已预填密码（无真实认证）。", enter:"进入", logout:"退出登录", language:"语言", currency:"货币", resetDemo:"重置演示",
   analyst:"分析师", owner:"业务负责人", minister:"部长",
-  analyst_full:"住房支援分析师", owner_full:"业务负责人（执行）", minister_full:"部长阁下",
+  analyst_full:"分析师", owner_full:"业务负责人", minister_full:"部长",
   analyst_desc:"运行分析与 What-if，组装并上报决策包。", owner_desc:"审阅并采纳战术级推荐。", minister_desc:"裁决战略事项（补贴上限 / 内部法规）。",
   nav_home:"首页", nav_data:"数据就绪", nav_alloc:"配分方案", nav_forecast:"预测与公平",
   nav_whatif:"What-if 模拟", nav_packages:"决策包", nav_approvals:"审批中心",
@@ -1554,6 +1624,12 @@ Object.assign(I18N.ar,{ ff_how:"آلية العمل · الأدوار والبي
 Object.assign(I18N.en,{ leak_report:"Report", leak_cases:"cases", leak_big:"Large-scale (>100 cases) — must escalate to the Minister", leak_routeHint:"Confirmed leak → Business Owner within 24h · >100 cases → Minister within 4h · Support is never auto-suspended.", leakSev_danger:"Confirmed", leakSev_amber:"Likely", leakSev_info:"Warning", leakStatus_detected:"Detected", leakStatus_submitted:"Awaiting Business Owner", leakStatus_adopted:"Action adopted", leakStatus_escalated:"Awaiting Minister", leakStatus_adjudicated:"Adjudicated", leakStatus_rejected:"Dismissed" });
 Object.assign(I18N.zh,{ leak_report:"上报", leak_cases:"案例", leak_big:"大规模（>100 案例）— 必须上报部长", leak_routeHint:"确认漏损 → 业务负责人 24 小时内 · >100 案例 → 部长 4 小时内 · 绝不自动停补。", leakSev_danger:"确认", leakSev_amber:"疑似", leakSev_info:"警示", leakStatus_detected:"已检测", leakStatus_submitted:"待业务负责人", leakStatus_adopted:"已采纳处置", leakStatus_escalated:"待部长", leakStatus_adjudicated:"已裁决", leakStatus_rejected:"已驳回" });
 Object.assign(I18N.ar,{ leak_report:"رفع", leak_cases:"حالات", leak_big:"واسع النطاق (>١٠٠ حالة) — يجب الرفع للوزير", leak_routeHint:"تسرب مؤكد ← مالك الأعمال خلال ٢٤ ساعة · >١٠٠ حالة ← الوزير خلال ٤ ساعات · لا يُوقف الدعم آلياً.", leakSev_danger:"مؤكد", leakSev_amber:"محتمل", leakSev_info:"تحذير", leakStatus_detected:"تم الكشف", leakStatus_submitted:"بانتظار مالك الأعمال", leakStatus_adopted:"تم اعتماد الإجراء", leakStatus_escalated:"بانتظار الوزير", leakStatus_adjudicated:"تم البتّ", leakStatus_rejected:"مرفوض" });
+Object.assign(I18N.en,{ syncOk:"Daily data sync succeeded", syncFail:"Daily data sync failed", importTitle:"Import to BIDSC", dropHint:"Drag a file here, or click to choose", validating:"Validating data accuracy…", checkPass:"Validation passed — ready to import", checkFail:"Validation failed — completeness <90% or exceptions >10%", importBtn:"Import to BIDSC", fileLabel:"File" });
+Object.assign(I18N.zh,{ syncOk:"每日数据同步成功", syncFail:"每日数据同步失败", importTitle:"导入到 BIDSC", dropHint:"拖拽文件到此，或点击选择", validating:"正在校验数据准确性…", checkPass:"校验通过 — 可导入", checkFail:"校验未通过 — 完整度 <90% 或异常 >10%", importBtn:"导入到 BIDSC", fileLabel:"文件" });
+Object.assign(I18N.ar,{ syncOk:"نجحت المزامنة اليومية للبيانات", syncFail:"فشلت المزامنة اليومية للبيانات", importTitle:"استيراد إلى BIDSC", dropHint:"اسحب ملفاً هنا أو اضغط للاختيار", validating:"جارٍ التحقق من دقة البيانات…", checkPass:"اجتاز التحقق — جاهز للاستيراد", checkFail:"فشل التحقق — الاكتمال <٩٠٪ أو الاستثناءات >١٠٪", importBtn:"استيراد إلى BIDSC", fileLabel:"الملف" });
+Object.assign(I18N.en,{ qreport:"Data quality report", totalRecords:"Total records", avgCompleteness:"Avg. completeness", exceptions:"Exceptions", thresholdNote:"Min. for BIDSC 90% · halts if exceptions >10%", qOk:"Within thresholds", qBelow:"Below 90% — analyst review required", qExc:"Exceptions >10% — update halted, analyst alerted", budgetBalance:"Budget balance", budgetSub:"Entered manually by the Business Owner from the official financial report.", bud_cash:"Cash support (monthly + package)", bud_inkind:"In-kind support (off-plan land discount)", bud_ceiling:"Interest support ceiling (bank agreements)", saveBalance:"Save balance", enteredBy:"Entered by", budStale:"No balance for >30 days — analyst & owner alerted.", ownerOnlyBudget:"Budget balance is entered by the Business Owner.", uploadBidsc:"Upload to BIDSC", uploadHint:"Manual upload until source integrations are ready.", uploadedOk:"uploaded to BIDSC", rulesTitle:"Key rules & exceptions", rule1:"Min. completeness to write BIDSC: 90% (adjustable).", rule2:"If exceptions exceed 10%, the update is halted and the analyst is alerted.", rule3:"If a source is unavailable, the last saved data is used with a warning.", rule4:"If no budget balance for 30+ days, analyst & owner are alerted.", rule5:"Allocation, Forecast & Beneficiary-tracking don't run until this cycle completes.", mSar:"M SAR" });
+Object.assign(I18N.zh,{ qreport:"数据质量报告", totalRecords:"总记录数", avgCompleteness:"平均完整度", exceptions:"异常率", thresholdNote:"写入 BIDSC 最低 90% · 异常 >10% 即停止", qOk:"在门槛内", qBelow:"低于 90% — 需分析师复核", qExc:"异常 >10% — 更新已停止，已通知分析师", budgetBalance:"预算余额", budgetSub:"由业务负责人依据官方财务报告手工录入。", bud_cash:"现金支援预算（月度 + 套餐）", bud_inkind:"实物支援预算（期房土地折扣）", bud_ceiling:"利息支援上限（银行协议总额）", saveBalance:"保存余额", enteredBy:"录入人", budStale:"已超 30 天未录入余额 — 已告警分析师与业务负责人。", ownerOnlyBudget:"预算余额由业务负责人录入。", uploadBidsc:"上传到 BIDSC", uploadHint:"在数据源集成就绪前用手工上传。", uploadedOk:"已上传到 BIDSC", rulesTitle:"关键规则与异常", rule1:"写入 BIDSC 的最低完整度：90%（可调）。", rule2:"异常超过 10% 时停止更新并通知分析师。", rule3:"数据源不可用时，沿用最近一次有效数据并记警告。", rule4:"超过 30 天未录入预算余额，同时告警分析师与业务负责人。", rule5:"本循环未完成前，配分、预测、受益人追踪均不运行。", mSar:"百万 SAR" });
+Object.assign(I18N.ar,{ qreport:"تقرير جودة البيانات", totalRecords:"إجمالي السجلات", avgCompleteness:"متوسط الاكتمال", exceptions:"الاستثناءات", thresholdNote:"الحد الأدنى لـ BIDSC ٩٠٪ · يتوقف إذا تجاوزت الاستثناءات ١٠٪", qOk:"ضمن الحدود", qBelow:"أقل من ٩٠٪ — يتطلب مراجعة المحلل", qExc:"الاستثناءات >١٠٪ — أُوقف التحديث وأُبلغ المحلل", budgetBalance:"رصيد الميزانية", budgetSub:"يُدخله مالك الأعمال يدوياً من التقرير المالي الرسمي.", bud_cash:"الدعم النقدي (شهري + باقة)", bud_inkind:"الدعم العيني (خصم أرض البيع على الخارطة)", bud_ceiling:"سقف دعم الفائدة (اتفاقيات البنوك)", saveBalance:"حفظ الرصيد", enteredBy:"أدخله", budStale:"لا رصيد منذ أكثر من ٣٠ يوماً — تم تنبيه المحلل ومالك الأعمال.", ownerOnlyBudget:"يُدخل رصيد الميزانية مالك الأعمال.", uploadBidsc:"رفع إلى BIDSC", uploadHint:"رفع يدوي حتى تجهز تكاملات المصادر.", uploadedOk:"تم الرفع إلى BIDSC", rulesTitle:"القواعد والاستثناءات الرئيسية", rule1:"الحد الأدنى للاكتمال للكتابة إلى BIDSC: ٩٠٪ (قابل للتعديل).", rule2:"إذا تجاوزت الاستثناءات ١٠٪ يتوقف التحديث ويُبلَّغ المحلل.", rule3:"إذا كان المصدر غير متاح، تُستخدم آخر بيانات محفوظة مع تحذير.", rule4:"إذا مرّ ٣٠+ يوماً دون رصيد، يُبلَّغ المحلل ومالك الأعمال.", rule5:"لا تعمل خطة التخصيص والتنبؤ وتتبع المستفيدين حتى تكتمل هذه الدورة.", mSar:"مليون ريال" });
 
 function nowStr(lang){ return new Date().toLocaleString(lang==="ar"?"ar-SA":"en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}); }
 
@@ -1598,6 +1674,7 @@ function App(){
   const [audit,setAudit]=useState(seedAudit);
   const [allocation,setAllocation]=useState({lastSync:"2026-06-01 06:00", recalcAt:null, status:"draft", rejectNote:"", at:null});
   const [leaks,setLeaks]=useState(seedLeaks);
+  const [budget,setBudget]=useState({cash:1580, inkind:220, ceiling:4200, enteredBy:"owner", enteredAt:"2026-05-28 10:00", daysSince:18});
   const t=(k)=>{ const d=I18N[lang]; if(d && d[k]!==undefined) return d[k]; const e=I18N.en; return (e && e[k]!==undefined) ? e[k] : k; };
 
   useEffect(()=>{ const html=document.documentElement; html.lang=lang; html.dir=lang==="ar"?"rtl":"ltr"; },[lang]);
@@ -1627,9 +1704,10 @@ function App(){
     const [status,role]=map[kind]; const ts=nowStr(lang);
     setLeaks(prev=>prev.map(l=>l.id===id?{...l,status,history:[...l.history,{role,kind,ts,note:note||""}]}:l));
   }
-  function reset(){ setPackages(seedPackages()); setAudit(seedAudit()); setAllocation({lastSync:"2026-06-01 06:00", recalcAt:null, status:"draft", rejectNote:"", at:null}); setLeaks(seedLeaks()); setRoute(user==="minister"?"cockpit":"home"); }
+  function saveBudget(vals){ setBudget(b=>({...b,...vals, enteredBy:user, enteredAt:nowStr(lang), daysSince:0})); }
+  function reset(){ setPackages(seedPackages()); setAudit(seedAudit()); setAllocation({lastSync:"2026-06-01 06:00", recalcAt:null, status:"draft", rejectNote:"", at:null}); setLeaks(seedLeaks()); setBudget({cash:1580, inkind:220, ceiling:4200, enteredBy:"owner", enteredAt:"2026-05-28 10:00", daysSince:18}); setRoute(user==="minister"?"cockpit":"home"); }
 
-  const store={ t,lang,setLang,currency,setCurrency,user,setUser,route,setRoute,packages,audit,addPackage,actOnPackage,reset,allocation,recalcAlloc,submitAlloc,actAlloc,leaks,leakAct };
+  const store={ t,lang,setLang,currency,setCurrency,user,setUser,route,setRoute,packages,audit,addPackage,actOnPackage,reset,allocation,recalcAlloc,submitAlloc,actAlloc,leaks,leakAct,budget,saveBudget };
 
   if(!user) return (<Ctx.Provider value={store}><Login/></Ctx.Provider>);
 
@@ -1639,7 +1717,7 @@ function App(){
       : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/> : route==="audit"?<AuditTrailPage/>
       : route==="copilot"?<CopilotHandoff/> : <AnalystHome/>;
   } else if(user==="owner"){
-    page = route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
+    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
       : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
   } else {
     page = route==="decisions"?<DecisionPackages filter={p=>["escalated","adjudicated","rejected"].includes(p.status)}/>
