@@ -241,7 +241,7 @@ const I18N = {
     pkgStatus_escalated:"Awaiting Minister", pkgStatus_adjudicated:"Adjudicated", pkgStatus_rejected:"Rejected",
     needsMinister:"Exceeds tactical authority — affects support cap. Escalate to Minister.",
     by:"by", at:"at", level:"Level", agentChain:"Orchestration chain",
-    ag_uc01:"UC-01 Subsidy Formula (temp)", ag_uc03:"UC-03 Optimization", ag_uc04:"UC-04 Forecast", ag_uc08:"UC-08 Fairness",
+    ag_uc01:"Subsidy Formula", ag_uc03:"Optimization", ag_uc04:"Forecast", ag_uc08:"Fairness",
     deliveredItems:"Recommendation · HBR · Fairness Gap · What-if result",
     annualSavings:"Annual savings", phaseSavings:"5-year savings", reviewRun:"Review & run What-if",
     contractsTarget:"Contract target 2026–2030", ownership:"Ownership rate",
@@ -320,7 +320,7 @@ const I18N = {
     pkgStatus_escalated:"بانتظار الوزير", pkgStatus_adjudicated:"تم البتّ", pkgStatus_rejected:"مرفوض",
     needsMinister:"يتجاوز الصلاحية التكتيكية — يمسّ سقف الدعم. يُرفع للوزير.",
     by:"بواسطة", at:"في", level:"المستوى", agentChain:"سلسلة التنسيق",
-    ag_uc01:"UC-01 صيغة الدعم (مؤقتة)", ag_uc03:"UC-03 التحسين", ag_uc04:"UC-04 التنبؤ", ag_uc08:"UC-08 العدالة",
+    ag_uc01:"صيغة الدعم", ag_uc03:"التحسين", ag_uc04:"التنبؤ", ag_uc08:"العدالة",
     deliveredItems:"توصية · HBR · فجوة العدالة · نتيجة المحاكاة",
     annualSavings:"الوفورات السنوية", phaseSavings:"وفورات ٥ سنوات", reviewRun:"المراجعة وتشغيل المحاكاة",
     contractsTarget:"مستهدف العقود ٢٠٢٦–٢٠٣٠", ownership:"معدل التملك",
@@ -358,10 +358,11 @@ function useMoney(){ const {currency}=useStore(); const pre = currency==="symbol
    ========================================================================= */
 const GlobeIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>);
 const ArrowIcon = (<svg className="ic-svg ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>);
+const UserIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>);
 function KPI({label,value,sub,tone}){
   const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
-  return (<div className="kpi"><div className="label">{label}</div>
-    <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub muted">{sub}</div>}</div>);
+  return (<div className={"kpi"+(tone?" kpi-"+tone:"")}><div className="label">{label}</div>
+    <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub">{sub}</div>}</div>);
 }
 function Section({title,sub,right,children}){
   return (<div className="card pad acc" style={{marginBottom:16}}>
@@ -416,7 +417,7 @@ function Login(){
   const [showPwd,setShowPwd]=useState(false);
   return (<div className="bld-login">
     <div className="bld-bg">{Skyline}</div>
-    <div className="bld-photo"/>
+    <img className="bld-photo" src="/assets/HeroSection.png" alt="" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/HeroSection.png";} else if(f==="1"){im.dataset.f="2";im.src="assets/HeroSection.png";} else im.style.display="none";}}/>
     <div className="bld-overlay"/>
     <div className="bld-center">
       <div className="bld-wrap">
@@ -424,7 +425,7 @@ function Login(){
           <div className="bld-brand-area">
             <div className="bld-logo">
               <img className="bld-logo-img" src="/assets/logo.png" alt="MoMaH"
-                   onError={e=>{e.currentTarget.style.display="none";}}/>
+                   onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/logo.png";} else if(f==="1"){im.dataset.f="2";im.src="assets/logo.png";} else im.style.display="none";}}/>
               <span className="bld-logo-cap">{t("brandLine")}</span>
             </div>
             <h3 style={{color:"#fff"}}>{t("sso_title")}</h3>
@@ -487,14 +488,16 @@ function TopBar(){
   const {t,lang,setLang,currency,setCurrency,user,setUser,reset}=useStore();
   const [open,setOpen]=useState(false);
   return (<div className="topbar">
-    <div className="brand"><div className="logo">م</div>
-      <div><div style={{fontSize:14}}>{t("appName")}</div>
-        <div style={{fontSize:11,opacity:.85,fontWeight:500}}>{t("agency")}</div></div></div>
+    <div className="brand">
+      <img className="topbar-logo" src="/assets/logo.png" alt="MoMaH" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/logo.png";} else if(f==="1"){im.dataset.f="2";im.src="assets/logo.png";} else im.style.display="none";}}/>
+      <span className="topbar-sep"/>
+      <span className="topbar-app">{t("appName")}</span>
+    </div>
     <div className="right">
-      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>{GlobeIcon} {lang==="en"?"العربية":"English"}</button>
+      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}><img className="ic-lang" src="/assets/icon-language.svg" alt="" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/icon-language.svg";} else if(f==="1"){im.dataset.f="2";im.src="assets/icon-language.svg";} else im.style.display="none";}}/> {lang==="en"?"العربية":"English"}</button>
       <button className="tbtn" onClick={()=>setCurrency(currency==="SAR"?"symbol":"SAR")}>{currency==="SAR"?"SAR":"⃁"}</button>
       <div className="usermenu">
-        <button className="tbtn" onClick={()=>setOpen(o=>!o)}>👤 {t(user)} ▾</button>
+        <button className="tbtn" onClick={()=>setOpen(o=>!o)}>{UserIcon} {t(user)} ▾</button>
         {open&&<div className="panel" onMouseLeave={()=>setOpen(false)}>
           <div style={{padding:"6px 8px",fontWeight:700}}>{t(user+"_full")}</div>
           <div style={{padding:"2px 8px 10px",fontSize:12}} className="muted">{t(user+"_desc")}</div>
@@ -517,7 +520,7 @@ function Sidebar(){
   const pendingForOwner = packages.filter(p=>p.status==="submitted").length;
   const pendingForMin = packages.filter(p=>p.status==="escalated").length;
   return (<div className="sidebar">
-    <div className="role"><div className="nm">{t(user+"_full")}</div><div className="rl">{t(user)}</div></div>
+    <div className="role"><div className="nm">{t(user+"_full")}</div></div>
     {NAV[user].map(([k,ic])=>{
       const key=k.replace("nav_","");
       const badge = (user==="owner"&&k==="nav_approvals"&&pendingForOwner)||(user==="minister"&&k==="nav_decisions"&&pendingForMin);
@@ -574,14 +577,21 @@ function AnalystHome(){
   </div>);
 }
 
-/* ---- Data readiness (UC-02) ---- */
+/* ---- Data readiness ---- */
+// Particle burst fired from the "Run" button centre — palm-green dots floating up & fading.
+function ParticleBurst(){
+  const parts=Array.from({length:16},()=>({dx:(Math.random()-.5)*140, dy:-30-Math.random()*90, d:(Math.random()*0.25).toFixed(2)}));
+  return <span className="burst" aria-hidden="true">{parts.map((p,i)=><i key={i} style={{"--dx":p.dx+"px","--dy":p.dy+"px","--d":p.d+"s"}}/>)}</span>;
+}
 function DataReadiness(){
   const {t}=useStore();
   const [sources,setSources]=useState(DATA_SOURCES);
   const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
   const [flash,setFlash]=useState(false); const [ranOnce,setRanOnce]=useState(false);
+  const [burst,setBurst]=useState(0); const [shake,setShake]=useState(false);
   function run(){
     setRunning(true); setDone(false); setProg(0); setFlash(false);
+    setBurst(Date.now()); setShake(true); setTimeout(()=>setShake(false),450);
     let p=0; const id=setInterval(()=>{ p+=10; setProg(p);
       if(p>=100){ clearInterval(id); setRunning(false); setDone(true); setRanOnce(true);
         setSources(prev=>prev.map(s=>({
@@ -596,9 +606,12 @@ function DataReadiness(){
       }
     },110);
   }
-  return (<div className="fade">
+  return (<div className={"fade"+(shake?" page-shake":"")}>
     <PageHeader title={t("nav_data")} sub={t("data_sub")}
-      right={<button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>}/>
+      right={<span className="btn-burst-wrap">
+        <button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>
+        {burst?<ParticleBurst key={burst}/>:null}
+      </span>}/>
     <Section title="BIDSC">
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
         <div style={{flex:1}}><Progress v={prog/100}/></div>
@@ -606,6 +619,13 @@ function DataReadiness(){
       </div>
       {ranOnce&&done&&<div className="muted" style={{fontSize:12,marginTop:8}}>✓ {t("cycleDone")}</div>}
     </Section>
+    {running&&<div className="skel-area">
+      <div className="cols-3">
+        {[0,1,2].map(i=>(<div key={i} className="skel-card">
+          <div className="skel-bar w50"/><div className="skel-bar w85"/><div className="skel-bar w65"/><div className="skel-bar w40"/>
+        </div>))}
+      </div>
+    </div>}
     <div className={"cols-3"+(flash?" flash-sources":"")}>
       {sources.map(s=>{
         const tone=s.status==="ok"?"var(--green)":s.status==="pending"?"var(--amber)":"var(--danger)";
@@ -633,7 +653,7 @@ function DataReadiness(){
   </div>);
 }
 
-/* ---- Allocation (UC-03) ---- */
+/* ---- Allocation ---- */
 function Allocation(){
   const {t}=useStore(); const {moneyFull}=useMoney();
   const [open,setOpen]=useState(null);
@@ -649,7 +669,7 @@ function Allocation(){
             <td className="right-num mono">{n0(r.contracts)}</td>
             <td className="right-num mono">{moneyFull(r.subsidy)}</td>
             <td className="right-num mono">{(r.cShare*100).toFixed(1)}%</td>
-            <td className="right-num"><button className="btn ghost sm" onClick={()=>setOpen(open===i?null:i)}>{t("explain")}</button></td>
+            <td className="right-num"><button className="btn sm" onClick={()=>setOpen(open===i?null:i)}>{t("explain")}</button></td>
           </tr>
           {open===i&&<tr className="expand-row"><td colSpan={5}>
             <div style={{fontSize:12.5}}>
@@ -662,7 +682,7 @@ function Allocation(){
   </div>);
 }
 
-/* ---- Forecast & Fairness (UC-04 / UC-08) ---- */
+/* ---- Forecast & Fairness ---- */
 function ForecastFairness(){
   const {t}=useStore(); const {money}=useMoney();
   const scn=BASELINE; const fc=useMemo(()=>buildForecast(scn),[]);
@@ -723,21 +743,79 @@ function ForecastFairness(){
 }
 
 /* ---- Orchestration chain ---- */
+// Smoothly rolling governmental metric (population / land / budget …). Rolls while active, locks to target otherwise.
+function RollingMetric({active,target,format}){
+  const [v,setV]=useState(target);
+  useEffect(()=>{
+    if(!active){ setV(target); return; }
+    const id=setInterval(()=>setV(target*(0.35+Math.random()*1.3)),85);
+    return ()=>clearInterval(id);
+  },[active,target]);
+  return <span className="chain-metric mono">{format(v)}</span>;
+}
+// Canvas particle field: glowing core particles + gravity links; on "converge" they collapse to the centre.
+function ParticleField({mode}){
+  const ref=useRef(null); const modeRef=useRef(mode);
+  useEffect(()=>{ modeRef.current=mode; },[mode]);
+  useEffect(()=>{
+    const cv=ref.current; if(!cv) return; const ctx=cv.getContext("2d"); if(!ctx) return;
+    const dpr=window.devicePixelRatio||1;
+    const cw=cv.clientWidth||600, ch=170;
+    cv.width=cw*dpr; cv.height=ch*dpr; ctx.scale(dpr,dpr);
+    const KPIS=[{l:"Eligible",v:"1.4M"},{l:"Contracts",v:"510K"},{l:"Budget",v:"7.9B"},{l:"Savings",v:"3.4B"},{l:"Fairness",v:"1.05"},{l:"HBR",v:"33%"},{l:"Ownership",v:"70%"}];
+    const N=KPIS.length, cx=cw/2, cy=ch/2;
+    const P=Array.from({length:N},(_,i)=>({x:Math.random()*cw,y:Math.random()*ch,vx:(Math.random()-.5)*.6,vy:(Math.random()-.5)*.6,r:9+Math.random()*3,glow:.5,bright:0,kpi:KPIS[i]}));
+    let raf, lastGrow=0;
+    function frame(now){
+      const conv=modeRef.current==="converge";
+      ctx.clearRect(0,0,cw,ch);
+      for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){ const a=P[i],b=P[j]; const d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<165){ ctx.strokeStyle="rgba(27,131,84,"+(0.20*(1-d/165))+")"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); } }
+      if(!conv && now-lastGrow>650){ lastGrow=now; const p=P[(Math.random()*N)|0]; p.bright=1; p.r=Math.min(13,p.r+1.3); }
+      P.forEach((p,i)=>{
+        if(conv){ p.x+=(cx-p.x)*0.08; p.y+=(cy-p.y)*0.08; p.glow=Math.min(1,p.glow+0.03); p.r+=(2.5-p.r)*0.05; }
+        else{ p.vx+=(cx-p.x)*0.00018+(Math.random()-.5)*0.07; p.vy+=(cy-p.y)*0.00018+(Math.random()-.5)*0.07; p.vx*=0.95; p.vy*=0.95; p.x+=p.vx; p.y+=p.vy;
+          if(p.x<10){p.x=10;p.vx*=-1;} if(p.x>cw-10){p.x=cw-10;p.vx*=-1;} if(p.y<10){p.y=10;p.vy*=-1;} if(p.y>ch-10){p.y=ch-10;p.vy*=-1;}
+          p.glow=0.5+0.3*Math.sin(now/380+i)+0.4*p.bright; p.bright*=0.96; }
+        const r=p.r;
+        const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r*4.5);
+        g.addColorStop(0,"rgba(27,131,84,"+Math.min(0.6,0.5*p.glow)+")"); g.addColorStop(1,"rgba(27,131,84,0)");
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,r*4.5,0,7); ctx.fill();
+        ctx.fillStyle="rgba(8,93,58,0.95)"; ctx.beginPath(); ctx.arc(p.x,p.y,r,0,7); ctx.fill();
+        if(!conv){ ctx.textAlign="center";
+          ctx.fillStyle="#fff"; ctx.font="700 10px Arial"; ctx.fillText(p.kpi.v, p.x, p.y+3);
+          ctx.fillStyle="rgba(8,59,52,0.92)"; ctx.font="600 9px Arial"; ctx.fillText(p.kpi.l, p.x, p.y+r+11);
+        }
+      });
+      if(conv){ const g=ctx.createRadialGradient(cx,cy,0,cx,cy,46); g.addColorStop(0,"rgba(248,198,48,0.55)"); g.addColorStop(1,"rgba(248,198,48,0)"); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,46,0,7); ctx.fill(); }
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+    return ()=>cancelAnimationFrame(raf);
+  },[]);
+  return <canvas ref={ref} className="pfield"/>;
+}
 function OrchestrationChain({states}){
-  const {t}=useStore();
-  const nodes=["ag_uc01","ag_uc03","ag_uc04","ag_uc08"];
+  const {t}=useStore(); const {money}=useMoney();
+  const nodes=[
+    { k:"ag_uc01", labelKey:"budgetCeiling", target:BRD.phase3BudgetSAR/BRD.phase3Years, fmt:money },
+    { k:"ag_uc03", labelKey:"contracts",     target:ANNUAL_CONTRACTS,                     fmt:n0 },
+    { k:"ag_uc04", labelKey:"kpi_savings",   target:scenarioSavings(computeAllocation(RECO_PARAMS)).phase, fmt:money },
+    { k:"ag_uc08", labelKey:"kpi_fairness",  target:1.05,                                 fmt:(v)=>Number(v).toFixed(2) },
+  ];
   return (<div className="chain">
-    {nodes.map((k,i)=>{ const s=states[i]||"idle";
-      return (<div key={k} className={"node "+(s==="run"?"run":s==="done"?"done":"")}>
-        <span style={{width:8,height:8,borderRadius:"50%",background:s==="done"?"var(--green)":s==="run"?"var(--info)":"#cbd5d0"}}/>
-        <span style={{flex:1,fontSize:13,fontWeight:600}}>{t(k)}</span>
+    {nodes.map((nd,i)=>{ const s=states[i]||"idle";
+      return (<div key={nd.k} className={"node "+(s==="run"?"run":s==="done"?"done":"")}>
+        <span className="node-dot" style={{background:s==="done"?"var(--green)":s==="run"?"var(--info)":"#cbd5d0"}}/>
+        <span style={{flex:1,fontSize:13,fontWeight:600}}>{t(nd.k)}</span>
+        <span className="node-metric"><span className="ml">{t(nd.labelKey)}</span> <RollingMetric active={s==="run"} target={nd.target} format={nd.fmt}/></span>
         <span className="st" style={{color:s==="done"?"var(--green)":s==="run"?"var(--info)":"var(--muted)"}}>
           {s==="run"?t("running"):s==="done"?("✓ "+t("done")):"—"}</span>
       </div>); })}
   </div>);
 }
 
-/* ---- What-if (UC-09) — centerpiece ---- */
+/* ---- What-if — centerpiece ---- */
 function WhatIf(){
   const {t,setRoute,addPackage,user}=useStore(); const {money}=useMoney();
   const [p,setP]=useState({reallocatePct:0,capHighPct:0,boostLowPct:0,offPlanPct:0});
@@ -745,14 +823,15 @@ function WhatIf(){
   const [chain,setChain]=useState(["idle","idle","idle","idle"]);
   const [busy,setBusy]=useState(false);
   const [flash,setFlash]=useState(false);
+  const [phase,setPhase]=useState(null);
   const scn=useMemo(()=>computeAllocation(p),[p]);
   const sv=scenarioSavings(scn);
   const C=RC;
   function animateChain(then){
-    setBusy(true); const seq=["idle","idle","idle","idle"];
+    setBusy(true); setPhase("run");
     [0,1,2,3].forEach((i)=>{
       setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="run";return n;}); },i*450);
-      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setFlash(true); setTimeout(()=>setFlash(false),1100);} },i*450+380);
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setFlash(true); setPhase("converge"); setTimeout(()=>{setFlash(false); setPhase(null);},1300);} },i*450+380);
     });
   }
   function runSim(){ animateChain(); }
@@ -788,7 +867,7 @@ function WhatIf(){
         <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
         <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
       </div>
-      {busy&&<div className="ai-scan"><span/></div>}
+      {phase&&<ParticleField mode={phase}/>}
       {busy&&<div className="ai-working">✦ {t("aiWorking")}</div>}
       <OrchestrationChain states={chain}/>
     </Section>
@@ -957,7 +1036,7 @@ function AuditTrailPage(){
           <th>{t("colStatus")}</th><th>{t("time")}</th><th>{t("note")}</th>
         </tr></thead>
         <tbody>{audit.map((a,i)=>(<tr key={i}>
-          <td className="mono"><button className="wo wo-btn" onClick={()=>setSel(a.target)} title={t("auditDetail")}>#{a.target}</button></td>
+          <td className="mono"><button className="wo wo-btn" onClick={()=>setSel(a.target)} title={t("auditDetail")}>#{a.target}<svg className="wo-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></td>
           <td><span className="tag">{t(a.role)}</span></td>
           <td>{t(a.action)}</td>
           <td>{a.status? statusChip(t,a.status) : "—"}</td>
@@ -993,7 +1072,7 @@ function AuditTrailPage(){
   </div>);
 }
 
-/* ---- Copilot handoff (UC-10) ---- */
+/* ---- Copilot handoff ---- */
 function CopilotHandoff(){
   const {t,audit}=useStore();
   const [sent,setSent]=useState(false);
@@ -1009,6 +1088,82 @@ function CopilotHandoff(){
 }
 
 /* ---- action labels (merged into i18n) ---- */
+// Chinese dictionary — reachable only via URL ?ln=zh (no language button is exposed for it).
+I18N.zh = {
+  appName:"住房补贴动态分配与优化",
+  sso_title:"统一身份登录", sso_sub:"统一访问市政与住房部数字服务。", identity:"身份",
+  signInTitle:"登录", forgotPwd:"忘记密码？", securityCode:"验证码", or_:"或",
+  nafath:"Nafath 国民统一登录", noAccount:"还没有账号？", createAccount:"创建新账号",
+  nic1:"NIC", nic2:"国民身份证", identityPh:"选择身份",
+  copyright:"© 2026 — 市政与住房部 · 住房支援署", brandLine:"住房补贴动态分配", login_btn:"登录",
+  ministry:"市政与住房部", agency:"住房支援署", syntheticData:"合成演示数据 — 非真实受益人",
+  login:"登录", username:"用户名", password:"密码", chooseRole:"选择演示身份",
+  loginHint:"演示已预填密码（无真实认证）。", enter:"进入", logout:"退出登录", language:"语言", currency:"货币", resetDemo:"重置演示",
+  analyst:"分析师", owner:"业务负责人", minister:"部长",
+  analyst_full:"住房支援分析师", owner_full:"业务负责人（执行）", minister_full:"部长阁下",
+  analyst_desc:"运行分析与 What-if，组装并上报决策包。", owner_desc:"审阅并采纳战术级推荐。", minister_desc:"裁决战略事项（补贴上限 / 内部法规）。",
+  nav_home:"首页", nav_data:"数据就绪", nav_alloc:"配分方案", nav_forecast:"预测与公平",
+  nav_whatif:"What-if 模拟", nav_packages:"决策包", nav_approvals:"审批中心",
+  nav_audit:"审计轨迹", nav_copilot:"住房 Copilot", nav_cockpit:"战略驾驶舱", nav_decisions:"战略决策",
+  kpi_savings:"预计节省（5年）", kpi_fairness:"公平性差距", kpi_hbr:"住房负担（HBR）",
+  kpi_budget:"预算占用率", kpi_contracts:"契约达成进度", kpi_pending:"待决策项",
+  kpi_forecastErr:"预测误差", kpi_dataReady:"数据就绪度", kpi_adoption:"采纳率",
+  of_budget:"占 79 亿预算", target:"目标", baseline:"基线", current:"当前",
+  fair_if:"≥ 1.0 视为公平", toTarget:"向 2030 目标 30–35%",
+  explain:"查看理由", impact:"预测影响", submit:"组装并上报决策包", approve:"采纳",
+  reject:"驳回并反馈", escalate:"上报部长", adjudicate:"裁决", view:"查看",
+  run:"运行", running:"运行中…", done:"完成", apply:"应用", todo:"待办", status:"状态",
+  region:"地区", incomeBand:"收入档", contracts:"契约数", subsidy:"平均支援", share:"占比",
+  before:"前", after:"后", delta:"变化", scenario:"情景", recommended:"推荐",
+  notifTitle:"决策包已上报", noItems:"暂无内容。",
+  src_sakani:"Sakani 平台", src_redf:"房地产发展基金（REDF）", src_nhc:"国家住房公司（NHC）",
+  src_rega:"房地产总局（Rega）", src_ncsi:"统计总局（NCSI）", src_sama:"中央银行（SAMA）",
+  st_ok:"已更新", st_pending:"待批准", st_delayed:"延迟 3–6 个月", quality:"质量", freq:"更新频率",
+  bl_lt5:"< 5,000", bl_5to8:"5,000–8,000", bl_8to10:"8,000–10,000",
+  bl_10to13:"10,000–13,000", bl_13to16:"13,000–16,000", bl_gt16:"> 16,000",
+  below10k:"1 万以下", above10k:"1 万以上",
+  rg_riyadh:"利雅得", rg_makkah:"麦加", rg_eastern:"东部省", rg_madinah:"麦地那", rg_asir:"阿西尔",
+  rg_qassim:"卡西姆", rg_tabuk:"塔布克", rg_hail:"哈伊勒", rg_jazan:"吉赞", rg_najran:"纳季兰",
+  rg_bahah:"巴哈", rg_jawf:"焦夫", rg_northern:"北部边境",
+  home_hello:"欢迎", monthlyCycle:"月度配分复核",
+  data_sub:"每日自动循环清洗数据，并将价格与预算写入 BIDSC。",
+  runCycle:"运行每日数据循环", writingBidsc:"写入 BIDSC", bidscDone:"BIDSC 已更新",
+  alloc_sub:"在已批准政策矩阵内的可解释建议分配。",
+  forecast_sub:"12 个月支出预测与预算上限，加多维公平性差距与漏损。",
+  spendForecast:"支出预测（12 个月）", budgetCeiling:"预算上限", alert:"预警",
+  alertMsg:"累计支出超过月度上限的 70% — 已发出预警。",
+  fairnessByRegion:"各地区公平性差距", leakage:"漏损与不当受益信号",
+  whatif_sub:"用自然语言提问或拖动杠杆——编排层调度智能体，KPI 实时更新。",
+  nlPlaceholder:"例如：把 1 万以下家庭的支援上调 10%，评估影响",
+  orchestration:"智能体编排", levers:"政策杠杆",
+  lv_realloc:"再分配 >1万 → <1万", lv_cap:"封顶 >1万 支援", lv_boost:"提升 <1万 支援", lv_offplan:"限制期房（off-plan）",
+  runWhatif:"运行模拟", compare:"基线 vs 情景", assembleFromHere:"由此情景组装决策包",
+  pkg_sub:"组装已解释的决策包并沿决策链上报。",
+  approvals_sub:"审阅分析师上报的战术级推荐。",
+  cockpit_sub:"战略 KPI 与需部长裁决的事项。",
+  decisions_sub:"上报待战略裁决的事项（补贴上限 / 内部法规）。",
+  audit_sub:"每次提交、采纳、驳回、裁决都被记录。", auditDetail:"审计轨迹详情", openHint:"点击工单编号查看详情",
+  copilot_sub:"经批准的输出通过 API 契约交付 Housing Copilot。",
+  deliver:"交付至 Housing Copilot", opening:"正在打开 Housing Copilot…",
+  redline:"系统只做推荐：永不自动审批、永不自动停补、永不修改法规。",
+  pkgStatus_draft:"草稿", pkgStatus_submitted:"待业务负责人", pkgStatus_approved:"已采纳（战术）",
+  pkgStatus_escalated:"待部长", pkgStatus_adjudicated:"已裁决", pkgStatus_rejected:"已驳回",
+  needsMinister:"超出战术权限 — 涉及补贴上限。上报部长。",
+  by:"由", at:"于", level:"级别", agentChain:"编排链路",
+  ag_uc01:"补贴公式", ag_uc03:"优化", ag_uc04:"预测", ag_uc08:"公平",
+  deliveredItems:"补贴推荐 · HBR · 公平性差距 · What-if 结果",
+  annualSavings:"年度节省", phaseSavings:"5年节省", reviewRun:"审阅并运行 What-if",
+  contractsTarget:"契约目标 2026–2030", ownership:"自有率",
+  more:"更多", workOrder:"工单编号", colStatus:"状态", records:"记录数", vsPrev:"较上一循环",
+  completeness:"完整度", lastUpdate:"最近更新", leversUsed:"所用杠杆", expectedImpact:"预期影响",
+  alertTitle:"预算预警", quickActions:"快捷入口", action:"动作", time:"时间", note:"备注", noLevers:"无变化（基线）",
+  td_alloc:"审阅本月配分方案", td_forecast:"处理支出预警", td_whatif:"运行利率情景的 What-if",
+  td_packages:"上报已组装的决策包", td_copilot:"向 Housing Copilot 交付已批准输出",
+  due_today:"今日到期", due_3:"3 项待处理", due_2:"2 项就绪", due_soon:"本周", due_1:"1 项待办",
+  svc_section:"核心服务", btn_details:"详情", btn_open:"打开", aiWorking:"智能体编排中…", cycleDone:"循环完成 — 数据源已刷新",
+  tag_auto:"每日自动", tag_monthly:"月度循环", tag_ai:"AI · 实时", tag_explain:"可解释", tag_audit:"已留痕", tag_api:"API 契约",
+};
+Object.assign(I18N.zh,{ act_submit:"已提交", act_approve:"已采纳（战术）", act_escalate:"已上报部长", act_adjudicate:"已裁决", act_reject:"已驳回" });
 Object.assign(I18N.en,{ act_submit:"Submitted", act_approve:"Approved (tactical)", act_escalate:"Escalated to Minister", act_adjudicate:"Adjudicated", act_reject:"Rejected" });
 Object.assign(I18N.ar,{ act_submit:"تم الرفع", act_approve:"اعتُمد (تكتيكي)", act_escalate:"رُفع للوزير", act_adjudicate:"تم البتّ", act_reject:"رُفض" });
 
@@ -1039,12 +1194,12 @@ function seedAudit(){ const out=[]; RAW_SEED.forEach(p=>p.history.forEach(h=>out
 
 function App(){
   const [user,setUserState]=useState(null);
-  const [lang,setLang]=useState("en");
+  const [lang,setLang]=useState(()=>{ try{ const q=new URLSearchParams(window.location.search).get("ln"); if(q==="zh"||q==="ar"||q==="en") return q; }catch(e){} return "en"; });
   const [currency,setCurrency]=useState("SAR");
   const [route,setRoute]=useState("home");
   const [packages,setPackages]=useState(seedPackages);
   const [audit,setAudit]=useState(seedAudit);
-  const t=(k)=> (I18N[lang] && I18N[lang][k]!==undefined) ? I18N[lang][k] : k;
+  const t=(k)=>{ const d=I18N[lang]; if(d && d[k]!==undefined) return d[k]; const e=I18N.en; return (e && e[k]!==undefined) ? e[k] : k; };
 
   useEffect(()=>{ const html=document.documentElement; html.lang=lang; html.dir=lang==="ar"?"rtl":"ltr"; },[lang]);
 
