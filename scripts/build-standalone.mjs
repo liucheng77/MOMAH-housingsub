@@ -5,8 +5,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const css = fs.readFileSync(path.join(root, "src", "styles.css"), "utf8");
-let code = fs.readFileSync(path.join(root, "src", "App.jsx"), "utf8");
+// src/ uses Vite-style absolute "/assets/..." (Vite maps public/ to the site root).
+// The standalone build is served from the repo root on GitHub Pages (project page lives under
+// /<repo>/), so rewrite to a RELATIVE "public/assets/..." path that resolves there.
+const css = fs.readFileSync(path.join(root, "src", "styles.css"), "utf8").replaceAll("/assets/", "public/assets/");
+let code = fs.readFileSync(path.join(root, "src", "App.jsx"), "utf8").replaceAll("/assets/", "public/assets/");
 
 code = code
   .replace('import React, { useState, useMemo, useEffect, useRef, createContext, useContext } from "react";',
@@ -23,7 +26,7 @@ const html = `<!doctype html>
 <title>MOMAH · Dynamic Subsidy Allocation & Optimization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 ${css}
 </style>
