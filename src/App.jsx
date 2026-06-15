@@ -170,6 +170,11 @@ function buildForecast(scn){
 const I18N = {
   en:{
     appName:"Dynamic Subsidy Allocation & Optimization",
+    sso_title:"Momrah Single Sign-On", sso_sub:"Unified national access to the Ministry of Municipalities & Housing digital services.", identity:"Identity",
+    signInTitle:"Sign In", forgotPwd:"Forgot password?", securityCode:"Security code", or_:"or",
+    nafath:"Nafath national access", noAccount:"Don't have an account?", createAccount:"Create New Account",
+    nic1:"NIC", nic2:"National Identity Card", identityPh:"Select identity",
+    copyright:"© 2026 — Ministry of Municipalities & Housing · Housing Support Agency", brandLine:"Dynamic Subsidy Allocation", login_btn:"Login",
     ministry:"Ministry of Municipalities & Housing", agency:"Housing Support Agency",
     syntheticData:"Synthetic demo data — not real beneficiaries",
     login:"Sign in", username:"Username", password:"Password", chooseRole:"Select a demo identity",
@@ -228,7 +233,7 @@ const I18N = {
     approvals_sub:"Review tactical recommendations submitted by analysts.",
     cockpit_sub:"Strategic KPIs and items requiring ministerial adjudication.",
     decisions_sub:"Items escalated for strategic adjudication (caps / internal regulations).",
-    audit_sub:"Every submission, approval, rejection and adjudication is recorded.",
+    audit_sub:"Every submission, approval, rejection and adjudication is recorded.", auditDetail:"Audit trail detail", openHint:"Click a work order # to view details",
     copilot_sub:"Approved outputs are delivered to Housing Copilot via the API Contract.",
     deliver:"Deliver to Housing Copilot", opening:"Opening Housing Copilot…",
     redline:"The system only recommends. It never auto-approves, never auto-suspends support, never edits regulations.",
@@ -247,9 +252,16 @@ const I18N = {
     td_whatif:"Run What-if for the interest-rate scenario", td_packages:"Submit assembled decision packages",
     td_copilot:"Deliver approved outputs to Housing Copilot",
     due_today:"Due today", due_3:"3 open", due_2:"2 ready", due_soon:"This week", due_1:"1 pending",
+    svc_section:"Key Services", btn_details:"Details", btn_open:"Open", aiWorking:"Agents orchestrating…", cycleDone:"Cycle complete — sources refreshed",
+    tag_auto:"Automated daily", tag_monthly:"Monthly cycle", tag_ai:"AI · live", tag_explain:"Explainable", tag_audit:"Audit-logged", tag_api:"API contract",
   },
   ar:{
     appName:"التخصيص الديناميكي للدعم وتحسينه",
+    sso_title:"النفاذ الموحد", sso_sub:"النفاذ الوطني الموحد إلى الخدمات الرقمية لوزارة البلديات والإسكان.", identity:"الهوية",
+    signInTitle:"تسجيل الدخول", forgotPwd:"نسيت كلمة المرور؟", securityCode:"الرمز المرئي", or_:"أو",
+    nafath:"الدخول عبر نفاذ", noAccount:"ليس لديك حساب؟", createAccount:"إنشاء حساب جديد",
+    nic1:"الهوية", nic2:"بطاقة الهوية الوطنية", identityPh:"اختر الهوية",
+    copyright:"© ٢٠٢٦ — وزارة البلديات والإسكان · هيئة الدعم السكني", brandLine:"التخصيص الديناميكي للدعم", login_btn:"دخول",
     ministry:"وزارة البلديات والإسكان", agency:"هيئة الدعم السكني",
     syntheticData:"بيانات تجريبية اصطناعية — ليست مستفيدين حقيقيين",
     login:"تسجيل الدخول", username:"اسم المستخدم", password:"كلمة المرور", chooseRole:"اختر هوية تجريبية",
@@ -300,7 +312,7 @@ const I18N = {
     approvals_sub:"راجع التوصيات التكتيكية المرفوعة من المحللين.",
     cockpit_sub:"مؤشرات استراتيجية وبنود تتطلب بتّ الوزير.",
     decisions_sub:"بنود مرفوعة للبتّ الاستراتيجي (السقوف / اللوائح الداخلية).",
-    audit_sub:"يُسجّل كل رفع واعتماد ورفض وبتّ.",
+    audit_sub:"يُسجّل كل رفع واعتماد ورفض وبتّ.", auditDetail:"تفاصيل سجل التدقيق", openHint:"اضغط رقم أمر العمل لعرض التفاصيل",
     copilot_sub:"تُسلَّم المخرجات المعتمدة إلى مساعد الإسكان عبر عقد الـ API.",
     deliver:"التسليم إلى مساعد الإسكان", opening:"جارٍ فتح مساعد الإسكان…",
     redline:"النظام يوصي فقط: لا يعتمد آلياً، ولا يوقف الدعم آلياً، ولا يعدّل اللوائح.",
@@ -319,6 +331,8 @@ const I18N = {
     td_whatif:"تشغيل محاكاة لسيناريو سعر الفائدة", td_packages:"رفع حزم القرار المُجمّعة",
     td_copilot:"تسليم المخرجات المعتمدة إلى مساعد الإسكان",
     due_today:"مستحق اليوم", due_3:"٣ مفتوحة", due_2:"٢ جاهزة", due_soon:"هذا الأسبوع", due_1:"١ معلّق",
+    svc_section:"الخدمات الرئيسية", btn_details:"تفاصيل", btn_open:"فتح", aiWorking:"الوكلاء يعملون…", cycleDone:"اكتملت الدورة — تم تحديث المصادر",
+    tag_auto:"آلي يومي", tag_monthly:"دورة شهرية", tag_ai:"ذكاء · مباشر", tag_explain:"قابل للتفسير", tag_audit:"مُسجّل", tag_api:"عقد API",
   }
 };
 
@@ -342,13 +356,15 @@ function useMoney(){ const {currency}=useStore(); const pre = currency==="symbol
 /* =========================================================================
    UI atoms
    ========================================================================= */
+const GlobeIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>);
+const ArrowIcon = (<svg className="ic-svg ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>);
 function KPI({label,value,sub,tone}){
   const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
   return (<div className="kpi"><div className="label">{label}</div>
     <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub muted">{sub}</div>}</div>);
 }
 function Section({title,sub,right,children}){
-  return (<div className="card pad" style={{marginBottom:16}}>
+  return (<div className="card pad acc" style={{marginBottom:16}}>
     <div className="page-h" style={{marginBottom:sub?12:8}}>
       <div><h2 style={{fontSize:16}}>{title}</h2>{sub&&<div className="sub muted">{sub}</div>}</div>{right}</div>
     {children}</div>);
@@ -362,38 +378,105 @@ function Bar({label,v,max,color}){ return (<div style={{marginBottom:8}}>
    Login
    ========================================================================= */
 const ROLE_KEYS = ["analyst","owner","minister"];
+const Skyline = (
+  <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="bldsky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#13796a"/><stop offset="0.55" stopColor="#0d5a4f"/><stop offset="1" stopColor="#093b35"/>
+      </linearGradient>
+    </defs>
+    <rect width="1440" height="700" fill="url(#bldsky)"/>
+    <circle cx="1180" cy="150" r="60" fill="#1aa07f" opacity="0.25"/>
+    <g fill="#0c4a40">
+      <rect x="40" y="420" width="120" height="280"/><rect x="200" y="360" width="90" height="340"/>
+      <rect x="330" y="300" width="70" height="400"/><rect x="430" y="440" width="110" height="260"/>
+      <rect x="580" y="250" width="60" height="450"/><rect x="660" y="330" width="100" height="370"/>
+      <rect x="800" y="280" width="80" height="420"/><rect x="900" y="420" width="120" height="280"/>
+      <rect x="1060" y="320" width="80" height="380"/><rect x="1170" y="380" width="100" height="320"/>
+      <rect x="1300" y="300" width="90" height="400"/>
+    </g>
+    <g fill="#0f5a4c">
+      <rect x="150" y="470" width="70" height="230"/><rect x="290" y="410" width="50" height="290"/>
+      <rect x="520" y="380" width="70" height="320"/><rect x="760" y="440" width="60" height="260"/>
+      <rect x="1010" y="470" width="60" height="230"/><rect x="1250" y="440" width="60" height="260"/>
+    </g>
+    <g fill="#f8c630" opacity="0.16">
+      <rect x="350" y="330" width="8" height="12"/><rect x="368" y="330" width="8" height="12"/><rect x="350" y="360" width="8" height="12"/>
+      <rect x="598" y="290" width="8" height="12"/><rect x="598" y="320" width="8" height="12"/><rect x="616" y="290" width="8" height="12"/>
+      <rect x="820" y="320" width="8" height="12"/><rect x="838" y="320" width="8" height="12"/><rect x="820" y="350" width="8" height="12"/>
+      <rect x="1078" y="360" width="8" height="12"/><rect x="1078" y="390" width="8" height="12"/><rect x="1318" y="340" width="8" height="12"/>
+    </g>
+  </svg>
+);
+function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 function Login(){
   const {t,setUser,lang,setLang}=useStore();
   const [role,setRole]=useState("analyst");
-  return (<div className="login-wrap">
-    <div className="login-card fade">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:40,height:40,borderRadius:10,background:"var(--green)",color:"#fff",display:"grid",placeItems:"center",fontWeight:800}}>م</div>
-          <div><div style={{fontWeight:700}}>{t("ministry")}</div><div className="muted" style={{fontSize:12}}>{t("agency")}</div></div>
+  const [code,setCode]=useState(genCode);
+  const [showPwd,setShowPwd]=useState(false);
+  return (<div className="bld-login">
+    <div className="bld-bg">{Skyline}</div>
+    <div className="bld-photo"/>
+    <div className="bld-overlay"/>
+    <div className="bld-center">
+      <div className="bld-wrap">
+        <div className="bld-row2">
+          <div className="bld-brand-area">
+            <div className="bld-logo">
+              <img className="bld-logo-img" src="assets/logo.png" alt="MoMaH"
+                   onError={e=>{e.currentTarget.style.display="none";}}/>
+              <span className="bld-logo-cap">{t("brandLine")}</span>
+            </div>
+            <h3 style={{color:"#fff"}}>{t("sso_title")}</h3>
+            <p>{t("sso_sub")}</p>
+          </div>
+          <div className="bld-card-col">
+            <div className="bld-card fade">
+              <h2>{t("signInTitle")}</h2>
+              <div className="bld-fg">
+                <label>{t("identity")}</label>
+                <div className="bld-inp">
+                  <span className="ic">👤</span>
+                  <select value={role} onChange={e=>setRole(e.target.value)}>
+                    {ROLE_KEYS.map(rk=><option key={rk} value={rk}>{t(rk+"_full")}</option>)}
+                  </select>
+                  <span className="caret">▾</span>
+                </div>
+              </div>
+              <div className="bld-fg">
+                <label>{t("password")}</label>
+                <div className="bld-inp has-eye">
+                  <span className="ic">🔒</span>
+                  <input type={showPwd?"text":"password"} value="********" readOnly/>
+                  <span className="eye" onClick={()=>setShowPwd(s=>!s)} title="Show/Hide">👁</span>
+                </div>
+              </div>
+              <div className="bld-hint">{t("loginHint")}</div>
+              <div className="bld-captcha">
+                <div className="bld-code"><span>{code}</span></div>
+                <button className="bld-refresh" onClick={()=>setCode(genCode())} title="Refresh">⟳</button>
+                <input placeholder={t("securityCode")} maxLength={6}/>
+              </div>
+              <button className="bld-btn" onClick={()=>setUser(role)}>{t("login_btn")}</button>
+              <div className="bld-or">{t("or_")}</div>
+              <button className="bld-nic" onClick={()=>setUser(role)}>
+                <div className="bld-nic-grid">
+                  <i className="g"/><i className="k"/><i className="o"/>
+                  <i className="k"/><i className="g"/><i className="k"/>
+                  <i className="o"/><i className="k"/><i className="g"/>
+                </div>
+                <div><div className="l1">{t("nic1")}</div><div className="l2">{t("nic2")}</div></div>
+              </button>
+              <div className="bld-create">{t("noAccount")} <button>{t("createAccount")}</button></div>
+              <div className="bld-langrow">
+                <button className="bld-lang2" onClick={()=>setLang(lang==="en"?"ar":"en")}>{GlobeIcon} {lang==="en"?"EN / العربية":"العربية / EN"}</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <button className="btn ghost sm" onClick={()=>setLang(lang==="en"?"ar":"en")}>{lang==="en"?"العربية":"EN"}</button>
       </div>
-      <h1 style={{fontSize:20,marginBottom:2}}>{t("appName")}</h1>
-      <div className="muted" style={{fontSize:12.5,marginBottom:16}}>{t("login")}</div>
-      <div className="field"><label>{t("chooseRole")}</label>
-        <div className="role-pick">
-          {ROLE_KEYS.map(rk=>(
-            <button key={rk} className={"role-opt"+(role===rk?" sel":"")} onClick={()=>setRole(rk)}>
-              <span className="av">{t(rk).slice(0,1)}</span>
-              <span style={{flex:1}}><span style={{fontWeight:700,display:"block"}}>{t(rk+"_full")}</span>
-                <span className="muted" style={{fontSize:12}}>{t(rk+"_desc")}</span></span>
-              {role===rk&&<span style={{color:"var(--green)",fontWeight:800}}>✓</span>}
-            </button>))}
-        </div>
-      </div>
-      <div className="field"><label>{t("username")}</label>
-        <input className="input" value={t(role)} readOnly/></div>
-      <div className="field"><label>{t("password")}</label>
-        <input className="input" type="password" value="********" readOnly/></div>
-      <button className="btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>setUser(role)}>{t("enter")}</button>
-      <div className="muted" style={{fontSize:11.5,marginTop:10,textAlign:"center"}}>{t("loginHint")}</div>
     </div>
+    <div className="bld-copy">{t("copyright")} · {t("syntheticData")}</div>
   </div>);
 }
 
@@ -408,8 +491,7 @@ function TopBar(){
       <div><div style={{fontSize:14}}>{t("appName")}</div>
         <div style={{fontSize:11,opacity:.85,fontWeight:500}}>{t("agency")}</div></div></div>
     <div className="right">
-      <span className="chip gold" style={{background:"rgba(255,255,255,.15)",color:"#fff"}}>● {t("syntheticData")}</span>
-      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>🌐 {lang==="en"?"العربية":"English"}</button>
+      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>{GlobeIcon} {lang==="en"?"العربية":"English"}</button>
       <button className="tbtn" onClick={()=>setCurrency(currency==="SAR"?"symbol":"SAR")}>{currency==="SAR"?"SAR":"⃁"}</button>
       <div className="usermenu">
         <button className="tbtn" onClick={()=>setOpen(o=>!o)}>👤 {t(user)} ▾</button>
@@ -480,7 +562,7 @@ function AnalystHome(){
         <span className="av sm">{it.ic}</span>
         <div style={{flex:1}}><div style={{fontWeight:600}}>{t(it.k)}</div></div>
         <span className={"chip "+it.chip}>{t(it.due)}</span>
-        <button className="btn ghost sm" onClick={()=>setRoute(it.route)}>{t("more")} →</button>
+        <button className="btn secondary sm" onClick={()=>setRoute(it.route)}>{t("more")} {ArrowIcon}</button>
       </div>))}
     </Section>
     <Section title={t("quickActions")}>
@@ -495,20 +577,37 @@ function AnalystHome(){
 /* ---- Data readiness (UC-02) ---- */
 function DataReadiness(){
   const {t}=useStore();
+  const [sources,setSources]=useState(DATA_SOURCES);
   const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
-  function run(){ setRunning(true); setDone(false); setProg(0);
-    let p=0; const id=setInterval(()=>{ p+=10; setProg(p); if(p>=100){clearInterval(id);setRunning(false);setDone(true);} },120); }
+  const [flash,setFlash]=useState(false); const [ranOnce,setRanOnce]=useState(false);
+  function run(){
+    setRunning(true); setDone(false); setProg(0); setFlash(false);
+    let p=0; const id=setInterval(()=>{ p+=10; setProg(p);
+      if(p>=100){ clearInterval(id); setRunning(false); setDone(true); setRanOnce(true);
+        setSources(prev=>prev.map(s=>({
+          ...s,
+          records: s.records + Math.max(1, Math.round(s.records*(0.001+Math.random()*0.004))),
+          quality: Math.min(99, s.quality + 1 + Math.floor(Math.random()*2)),
+          completeness: Math.min(99, s.completeness + 1 + Math.floor(Math.random()*2)),
+          delta: +(Math.random()*1.7 - 0.3).toFixed(1),
+          updated: s.status==="ok" ? "Just now" : s.updated,
+        })));
+        setFlash(true); setTimeout(()=>setFlash(false), 1300);
+      }
+    },110);
+  }
   return (<div className="fade">
     <PageHeader title={t("nav_data")} sub={t("data_sub")}
       right={<button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>}/>
     <Section title="BIDSC">
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
         <div style={{flex:1}}><Progress v={prog/100}/></div>
-        <span className="chip">{done?("✓ "+t("bidscDone")):(t("writingBidsc")+" "+prog+"%")}</span>
+        <span className="chip">{running?(t("writingBidsc")+" "+prog+"%"):("✓ "+t("bidscDone"))}</span>
       </div>
+      {ranOnce&&done&&<div className="muted" style={{fontSize:12,marginTop:8}}>✓ {t("cycleDone")}</div>}
     </Section>
-    <div className="cols-3">
-      {DATA_SOURCES.map(s=>{
+    <div className={"cols-3"+(flash?" flash-sources":"")}>
+      {sources.map(s=>{
         const tone=s.status==="ok"?"var(--green)":s.status==="pending"?"var(--amber)":"var(--danger)";
         const dCol=s.delta>0?"var(--green)":s.delta<0?"var(--danger)":"var(--muted)";
         const dStr=(s.delta>0?"▲ +":s.delta<0?"▼ ":"– ")+Math.abs(s.delta)+"%";
@@ -645,6 +744,7 @@ function WhatIf(){
   const [nl,setNl]=useState("");
   const [chain,setChain]=useState(["idle","idle","idle","idle"]);
   const [busy,setBusy]=useState(false);
+  const [flash,setFlash]=useState(false);
   const scn=useMemo(()=>computeAllocation(p),[p]);
   const sv=scenarioSavings(scn);
   const C=RC;
@@ -652,7 +752,7 @@ function WhatIf(){
     setBusy(true); const seq=["idle","idle","idle","idle"];
     [0,1,2,3].forEach((i)=>{
       setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="run";return n;}); },i*450);
-      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then();} },i*450+380);
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setFlash(true); setTimeout(()=>setFlash(false),1100);} },i*450+380);
     });
   }
   function runSim(){ animateChain(); }
@@ -688,6 +788,8 @@ function WhatIf(){
         <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
         <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
       </div>
+      {busy&&<div className="ai-scan"><span/></div>}
+      {busy&&<div className="ai-working">✦ {t("aiWorking")}</div>}
       <OrchestrationChain states={chain}/>
     </Section>
     <div className="cols-2">
@@ -698,7 +800,7 @@ function WhatIf(){
         <Slider lk="lv_offplan" field="offPlanPct" max="20"/>
       </Section>
       <div>
-        <div className="cols-3" style={{marginBottom:16}}>
+        <div className={"cols-3"+(flash?" flash-kpis":"")} style={{marginBottom:16}}>
           <KPI label={t("kpi_savings")} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
           <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
           <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
@@ -796,7 +898,7 @@ function OwnerHome(){
       <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} tone="warn"/>
       <KPI label={t("kpi_adoption")} value="65%" sub={t("target")+" 75%"}/>
     </div>
-    <Section title={t("nav_approvals")} right={<button className="btn sm" onClick={()=>setRoute("approvals")}>{t("view")}</button>}>
+    <Section title={t("nav_approvals")} right={<button className="btn sm" onClick={()=>setRoute("approvals")}>{t("view")} {ArrowIcon}</button>}>
       <div className="muted">{pending? (pending+" · "+t("pkgStatus_submitted")) : t("noItems")}</div>
     </Section>
   </div>);
@@ -825,15 +927,26 @@ function MinisterHome(){
         <span className="chip">Dev. {n0(BRD.targetBreakdown.devHousing)}</span>
       </div>
     </Section>
-    <Section title={t("nav_decisions")} right={<button className="btn sm" onClick={()=>setRoute("decisions")}>{t("view")}</button>}>
+    <Section title={t("nav_decisions")} right={<button className="btn sm" onClick={()=>setRoute("decisions")}>{t("view")} {ArrowIcon}</button>}>
       <div className="muted">{pending? (pending+" · "+t("pkgStatus_escalated")) : t("noItems")}</div>
     </Section>
   </div>);
 }
 
 /* ---- Audit trail ---- */
+function Modal({title,onClose,children}){
+  return (<div className="modal-ov" onClick={onClose}>
+    <div className="modal-box fade" onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><h3>{title}</h3><button className="modal-x" onClick={onClose} aria-label="close">✕</button></div>
+      <div className="modal-body">{children}</div>
+    </div>
+  </div>);
+}
 function AuditTrailPage(){
-  const {t,audit}=useStore();
+  const {t,audit,packages}=useStore(); const {money}=useMoney();
+  const [sel,setSel]=useState(null);
+  const pkg = sel ? packages.find(p=>p.id===sel) : null;
+  const levers = pkg ? leverSummary(t,pkg.params||{}) : [];
   return (<div className="fade">
     <PageHeader title={t("nav_audit")} sub={t("audit_sub")}/>
     <div className="card pad">
@@ -844,7 +957,7 @@ function AuditTrailPage(){
           <th>{t("colStatus")}</th><th>{t("time")}</th><th>{t("note")}</th>
         </tr></thead>
         <tbody>{audit.map((a,i)=>(<tr key={i}>
-          <td className="mono"><span className="wo">#{a.target}</span></td>
+          <td className="mono"><button className="wo wo-btn" onClick={()=>setSel(a.target)} title={t("auditDetail")}>#{a.target}</button></td>
           <td><span className="tag">{t(a.role)}</span></td>
           <td>{t(a.action)}</td>
           <td>{a.status? statusChip(t,a.status) : "—"}</td>
@@ -852,7 +965,31 @@ function AuditTrailPage(){
           <td className="muted">{a.note||"—"}</td>
         </tr>))}</tbody>
       </table></div>}
+      {audit.length>0&&<div className="muted" style={{fontSize:12,marginTop:10}}>{t("openHint")}</div>}
     </div>
+    {pkg && <Modal title={t("auditDetail")} onClose={()=>setSel(null)}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:10}}>
+        <span className="wo">#{pkg.id}</span>{statusChip(t,pkg.status)}
+      </div>
+      <h4 style={{margin:"0 0 14px",fontSize:16}}>{pkg.title}</h4>
+      <div className="muted" style={{fontSize:12,marginBottom:6}}>{t("leversUsed")}</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
+        {levers.length? levers.map((l,i)=><span key={i} className="chip gray">{l[0]} <b style={{marginInlineStart:4}}>{l[1]}</b></span>)
+          : <span className="muted" style={{fontSize:12}}>{t("noLevers")}</span>}
+      </div>
+      <div className="cols-3" style={{marginBottom:16}}>
+        <div className="mini-kpi"><div className="muted">{t("kpi_savings")}</div><div className="v" style={{color:"var(--green)"}}>{money(pkg.kpis.savingsPhase)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_fairness")}</div><div className="v">{pkg.kpis.fg.toFixed(2)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_hbr")}</div><div className="v">{pct1(pkg.kpis.hbr)}</div></div>
+      </div>
+      <div className="divider"/>
+      <div className="muted" style={{fontSize:12,marginBottom:10}}>{t("nav_audit")}</div>
+      <div className="timeline">
+        {pkg.history.map((h,i)=>(<div key={i} className="ev"><div style={{fontSize:12.5}}>
+          <span className="tag">{t(h.role)}</span> <b>{t(h.action)}</b> {h.note?("· "+h.note):""}</div>
+          <div className="muted" style={{fontSize:11}}>{h.ts}</div></div>))}
+      </div>
+    </Modal>}
   </div>);
 }
 
