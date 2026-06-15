@@ -58,8 +58,8 @@ npm run preview    # 预览构建产物
 
 ## 五、设计规范（DGA）
 
-参考沙特数字政府管理局（DGA）设计系统的公开特征：沙特政府绿为主色（`#006C35`）、IBM Plex Sans / IBM Plex Sans Arabic 字体族、卡片式布局、清晰栅格与圆角、完整 RTL。
-> 注：DGA 规范站为前端渲染、且本环境无可用浏览器，未能抓取其精确色值 / 字体 token。如需 1:1 对齐，请提供规范中的色值与字体文件，可快速替换 `src/styles.css` 的 CSS 变量。
+采用 **Balady 官方设计 Token**（来自 `balady-design-system` skill）：沙特绿 `#1B8354` / 深绿 `#085D3A` / 浅绿 `#ECFDF3`、金色强调 `#F8C630`、语义色 success `#73b355` / warning `#e29700` / error `#e32700`；字体 Arial（拉丁）+ Noto Naskh Arabic（阿拉伯）；圆角 4/8/12/16，完整 RTL。登录页复刻 Balady SSO 版式：建筑天际线背景 + 深青遮罩层 + 悬浮白色卡片（Identity / Password / 图形验证码 / 登录 / Nafath 国家统一登录）。
+> 注：天际线背景与 Logo 为 CSS/SVG 原创还原（未复制官方位图/照片素材）。如需 1:1，把官方 Logo 与背景图替换进 `src/` 即可。
 
 ---
 
