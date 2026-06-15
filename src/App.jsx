@@ -423,7 +423,7 @@ function Login(){
         <div className="bld-row2">
           <div className="bld-brand-area">
             <div className="bld-logo">
-              <img className="bld-logo-img" src="assets/logo.png" alt="MoMaH"
+              <img className="bld-logo-img" src="/assets/logo.png" alt="MoMaH"
                    onError={e=>{e.currentTarget.style.display="none";}}/>
               <span className="bld-logo-cap">{t("brandLine")}</span>
             </div>
