@@ -6,10 +6,12 @@ import { fileURLToPath } from "url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 // src/ uses Vite-style absolute "/assets/..." (Vite maps public/ to the site root).
-// The standalone build is served from the repo root on GitHub Pages (project page lives under
-// /<repo>/), so rewrite to a RELATIVE "public/assets/..." path that resolves there.
-const css = fs.readFileSync(path.join(root, "src", "styles.css"), "utf8").replaceAll("/assets/", "public/assets/");
-let code = fs.readFileSync(path.join(root, "src", "App.jsx"), "utf8").replaceAll("/assets/", "public/assets/");
+// The standalone build is served on GitHub Pages PROJECT PAGE (/<repo>/), so rewrite the
+// primary path to "/MOMAH-housingsub/assets/...". Only matches the src="/assets/..." form,
+// so the onError fallbacks ("public/assets/..." and "assets/...") are left untouched.
+const REPO_BASE = "/MOMAH-housingsub";
+const css = fs.readFileSync(path.join(root, "src", "styles.css"), "utf8").replaceAll("url('/assets/", "url('" + REPO_BASE + "/assets/");
+let code = fs.readFileSync(path.join(root, "src", "App.jsx"), "utf8").replaceAll('"/assets/', '"' + REPO_BASE + '/assets/');
 
 code = code
   .replace('import React, { useState, useMemo, useEffect, useRef, createContext, useContext } from "react";',
