@@ -417,7 +417,8 @@ function Login(){
   const [showPwd,setShowPwd]=useState(false);
   return (<div className="bld-login">
     <div className="bld-bg">{Skyline}</div>
-    <img className="bld-photo" src="/assets/HeroSection.png" alt="" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/HeroSection.png";} else if(f==="1"){im.dataset.f="2";im.src="assets/HeroSection.png";} else im.style.display="none";}}/>
+    <img className="bld-photo" src="/MOMAH-housingsub/assets/HeroSection.png" alt="" data-i="0"
+      onError={e=>{const im=e.currentTarget; const c=["/MOMAH-housingsub/assets/building.jpg","public/assets/HeroSection.png","public/assets/building.jpg","assets/HeroSection.png","assets/building.jpg"]; const i=+(im.dataset.i||0); if(i<c.length){im.dataset.i=i+1; im.src=c[i];} else im.style.display="none";}}/>
     <div className="bld-overlay"/>
     <div className="bld-center">
       <div className="bld-wrap">
