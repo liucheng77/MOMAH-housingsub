@@ -6,23 +6,23 @@
 <title>MOMAH · Dynamic Subsidy Allocation & Optimization</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --green:#006C35; --green-dark:#00532a; --green-700:#0a7a40; --green-50:#e8f3ec; --green-100:#d3e8db;
-  --gold:#B68A2E; --gold-50:#f6efdd;
+  --green:#1B8354; --green-dark:#085D3A; --green-700:#12724a; --green-50:#ECFDF3; --green-100:#cdeede;
+  --gold:#F8C630; --gold-50:#fef7e0; --teal-deep:#0b3b34;
   --bg:#f4f7f5; --card:#ffffff; --ink:#16211c; --muted:#5c6b63; --line:#e2eae5;
-  --danger:#b3261e; --danger-50:#fbe9e7; --amber:#9a6b00; --amber-50:#fdf3dc; --info:#1763a6; --info-50:#e7f0f9;
+  --danger:#e32700; --danger-50:#fdeae6; --amber:#e29700; --amber-50:#fcf3dd; --success:#73b355; --info:#1763a6; --info-50:#e7f0f9;
   --radius:12px; --radius-sm:8px; --shadow:0 1px 2px rgba(16,33,28,.06),0 4px 16px rgba(16,33,28,.06);
   --sidebar-w:248px; --topbar-h:60px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%}
 body{
-  font-family:"IBM Plex Sans","IBM Plex Sans Arabic",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  font-family:Arial,Helvetica,"Noto Naskh Arabic",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
 }
-html[dir="rtl"] body{font-family:"IBM Plex Sans Arabic","IBM Plex Sans",system-ui,sans-serif}
+html[dir="rtl"] body{font-family:"Noto Naskh Arabic","Droid Arabic Naskh",Arial,Helvetica,sans-serif}
 #root{height:100%}
 button{font-family:inherit;cursor:pointer}
 a{color:inherit}
@@ -101,7 +101,7 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 
 /* ---------- misc ---------- */
 .progress{height:8px;border-radius:999px;background:#eef2ef;overflow:hidden}
-.progress>span{display:block;height:100%;background:var(--green);border-radius:999px}
+.progress>span{display:block;height:100%;background:var(--green);border-radius:999px;transition:width .55s ease}
 .range{width:100%;accent-color:var(--green)}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .field label{font-size:13px;font-weight:600}
@@ -139,6 +139,54 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .fade{animation:fade .3s ease}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
+/* ---- Balady-style polish: icons, buttons, card accent, active nav ---- */
+.ic-svg{width:16px;height:16px;display:inline-block;vertical-align:-3px;flex:0 0 auto}
+[dir="rtl"] .ic-arrow{transform:scaleX(-1)}
+.btn .ic-svg{width:15px;height:15px;vertical-align:-2px}
+.tbtn .ic-svg{width:15px;height:15px}
+.bld-lang2 .ic-svg{width:15px;height:15px;color:inherit}
+/* content cards get a thin green top accent (Balady service-card style) */
+.card.acc{border-top:3px solid var(--green);border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
+/* active sidebar item: green leading bar */
+.navitem{position:relative}
+.navitem.active::before{content:"";position:absolute;inset-inline-start:0;top:7px;bottom:7px;width:3px;background:var(--green);border-radius:0 2px 2px 0}
+[dir="rtl"] .navitem.active::before{border-radius:2px 0 0 2px}
+/* secondary buttons: white / green outline with inner icon (Balady "Details") */
+.btn.secondary{display:inline-flex;align-items:center;gap:6px}
+.btn.sm{display:inline-flex;align-items:center;gap:6px}
+
+/* ---- Balady-style service cards ---- */
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:1100px){.svc-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.svc-grid{grid-template-columns:1fr}}
+.svc-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);transition:transform .16s,box-shadow .16s,border-color .16s}
+.svc-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(16,33,28,.12);border-color:var(--green-100)}
+.svc-ic{width:46px;height:46px;border-radius:12px;background:var(--green-50);color:var(--green-dark);display:grid;place-items:center;font-size:22px;margin-bottom:4px}
+.svc-title{font-weight:700;font-size:15px}
+.svc-cat{font-size:12px;color:var(--muted)}
+.svc-tags{list-style:none;margin:6px 0 12px;padding:0;display:flex;flex-direction:column;gap:5px}
+.svc-tags li{font-size:12.5px;color:#3a4a42;position:relative;padding-inline-start:18px}
+.svc-tags li::before{content:"\2713";position:absolute;inset-inline-start:0;color:var(--green);font-weight:800}
+.svc-actions{margin-top:auto;display:flex;gap:8px;padding-top:4px}
+.svc-actions .btn{flex:1;justify-content:center}
+
+/* ---- Data Readiness: refresh flash ---- */
+.flash-sources .card{animation:srcflash 1.3s ease}
+@keyframes srcflash{0%{background:#eafaf0;box-shadow:0 0 0 0 rgba(27,131,84,0)}22%{box-shadow:0 0 0 3px rgba(27,131,84,.22)}100%{background:#fff;box-shadow:var(--shadow)}}
+
+/* ---- What-if: AI orchestration animation ---- */
+.ai-scan{height:3px;border-radius:2px;background:var(--green-50);overflow:hidden;position:relative;margin-bottom:8px}
+.ai-scan span{position:absolute;top:0;bottom:0;left:0;width:38%;background:linear-gradient(90deg,transparent,var(--green),transparent);animation:aiscan 1s linear infinite}
+@keyframes aiscan{0%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+.ai-working{font-size:12.5px;color:var(--green-dark);font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;animation:aipulse 1.2s ease infinite}
+@keyframes aipulse{0%,100%{opacity:.55}50%{opacity:1}}
+.chain .node.run{animation:nodeglow 1s ease infinite}
+@keyframes nodeglow{0%,100%{box-shadow:0 0 0 0 rgba(23,99,166,0)}50%{box-shadow:0 0 0 4px rgba(23,99,166,.16)}}
+.flash-kpis .kpi{animation:kpiflash 1s ease}
+@keyframes kpiflash{0%{box-shadow:0 0 0 0 rgba(27,131,84,0)}20%{box-shadow:0 0 0 3px rgba(27,131,84,.28)}100%{box-shadow:var(--shadow)}}
+.flash-kpis .kpi .value{animation:kpipop .55s ease}
+@keyframes kpipop{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
+
 /* ---- added: data-readiness key/value, to-do rows, prominent alert, work-order, package detail ---- */
 .kv{display:flex;flex-direction:column;gap:5px;font-size:12.5px}
 .kv-row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -153,9 +201,76 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .alert-body{font-size:13px;color:#7a241d;margin-top:2px}
 .alert-pill{background:var(--danger);color:#fff;font-weight:700;font-size:11px;padding:4px 12px;border-radius:999px;letter-spacing:.04em}
 .wo{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:12px;background:#eef2ef;color:var(--ink);padding:2px 8px;border-radius:6px}
+.wo-btn{cursor:pointer;border:1px solid transparent}
+.wo-btn:hover{background:var(--green-100);color:var(--green-dark);border-color:var(--green)}
+.modal-ov{position:fixed;inset:0;background:rgba(16,33,28,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.modal-box{background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.32);width:540px;max-width:100%;max-height:86vh;overflow:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;z-index:1}
+.modal-head h3{font-size:16px;font-weight:700}
+.modal-x{background:none;border:none;font-size:15px;color:var(--muted);cursor:pointer;width:30px;height:30px;border-radius:8px;line-height:1}
+.modal-x:hover{background:#f0f4f1;color:var(--ink)}
+.modal-body{padding:20px}
 .pkg-detail{margin-top:12px;padding:12px 14px;background:#f8fbf9;border:1px solid var(--line);border-radius:10px}
 .mini-kpi{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
 .mini-kpi .v{font-weight:700;font-size:16px;margin-top:2px}
+
+/* ---- Balady SSO login (matched to reference layout) ---- */
+.bld-login{position:relative;height:100%;min-height:100%;overflow:hidden;color:#161616}
+.bld-bg{position:absolute;inset:0;z-index:0}
+.bld-bg svg{width:100%;height:100%;display:block}
+.bld-photo{position:absolute;inset:0;z-index:0;background:url('assets/building.jpg') center/cover no-repeat}
+.bld-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,rgba(10,50,55,.50) 0%,rgba(10,50,55,.30) 50%,rgba(8,40,45,.62) 100%)}
+.bld-logo-img{height:54px;width:auto;display:block;flex:0 0 auto}
+.bld-logo-cap{color:#fff;font-weight:700;font-size:22px;line-height:1.3;max-width:360px}
+.bld-center{position:relative;z-index:3;height:100%;display:flex;align-items:center;justify-content:center;padding:24px 15px}
+.bld-wrap{width:100%;max-width:1200px}
+.bld-row2{display:flex;align-items:center;justify-content:space-between;gap:2rem}
+.bld-brand-area{flex:0 0 55%;max-width:55%;color:#fff}
+.bld-logo{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+.bld-logo .circle{width:60px;height:60px;border-radius:50%;background:var(--green);border:2px solid #fff;display:grid;place-items:center;color:#fff;font-size:26px;font-weight:800;flex:0 0 auto}
+.bld-logo .ar{display:block;font-weight:600;font-size:14px;line-height:1.3}
+.bld-logo .en{opacity:.85;font-size:11px}
+.bld-brand-area h3{font-size:46px;font-weight:700;line-height:1.25;letter-spacing:-1px;margin:0 0 16px}
+.bld-brand-area p{font-size:18px;line-height:1.6;margin:0;max-width:480px;opacity:.95}
+.bld-card-col{flex:0 0 45%;max-width:45%;display:flex;justify-content:center}
+.bld-card{width:100%;max-width:526px;background:#fff;border-radius:16px;box-shadow:0 3px 22px rgba(0,0,0,.25);padding:40px 36px}
+.bld-card h2{font-size:22px;font-weight:700;text-align:center;margin:0 0 28px}
+.bld-fg{margin-bottom:18px;text-align:start}
+.bld-fg label{display:block;font-size:14px;color:#161616;margin-bottom:6px}
+.bld-inp{position:relative}
+.bld-inp .ic{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);font-size:15px;color:#707070;pointer-events:none}
+.bld-inp .eye{position:absolute;inset-inline-end:12px;top:50%;transform:translateY(-50%);font-size:15px;color:#707070;cursor:pointer;user-select:none}
+.bld-inp input,.bld-inp select{width:100%;height:40px;border:1px solid #9DA4AE;border-radius:4px;background:#fff;padding:0 12px;padding-inline-start:38px;font-size:14px;color:#161616;font-family:inherit;outline:none;transition:border-color .15s}
+.bld-inp.has-eye input{padding-inline-end:38px}
+.bld-inp select{appearance:none;-webkit-appearance:none;padding-inline-end:34px;cursor:pointer}
+.bld-inp input:focus,.bld-inp select:focus{border-color:#9DA4AE;border-bottom:2px solid #161616}
+.bld-inp .caret{position:absolute;inset-inline-end:12px;top:50%;transform:translateY(-50%);color:#707070;pointer-events:none;font-size:11px}
+.bld-hint{font-size:12px;color:#707070;margin:-10px 0 14px}
+.bld-captcha{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.bld-code{background:#e5e7eb;border-radius:4px;min-width:120px;height:40px;display:flex;align-items:center;justify-content:center}
+.bld-code span{font-family:"Courier New",monospace;font-size:18px;letter-spacing:4px;color:#161616;font-weight:600;user-select:none}
+.bld-refresh{color:var(--green);font-size:18px;cursor:pointer;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:none;border:none}
+.bld-captcha input{flex:1;height:40px;border:1px solid #9DA4AE;border-radius:4px;background:#fff;padding:0 12px;font-size:14px;text-align:center;letter-spacing:3px;font-family:"Courier New",monospace;outline:none}
+.bld-captcha input:focus{border-bottom:2px solid #161616}
+.bld-btn{width:100%;height:40px;border:none;border-radius:4px;background:var(--green);color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+.bld-btn:hover{background:#146B43}
+.bld-or{display:flex;align-items:center;gap:12px;color:#707070;font-size:13px;margin:18px 0}
+.bld-or::before,.bld-or::after{content:"";flex:1;height:1px;background:#d1d5db}
+.bld-nic{width:100%;max-width:404px;height:72px;border:1px solid #384250;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center;gap:14px;cursor:pointer;margin:0 auto 16px}
+.bld-nic:hover{background:#f9fafb}
+.bld-nic-grid{display:grid;grid-template-columns:repeat(3,10px);grid-template-rows:repeat(3,10px);gap:2px}
+.bld-nic-grid i{width:10px;height:10px;border-radius:1px;display:block}
+.bld-nic-grid .g{background:var(--green)}.bld-nic-grid .k{background:#1a1a1a}.bld-nic-grid .o{background:#e07c3e}
+.bld-nic .l1{font-size:22px;font-weight:700;color:#161616;line-height:1.1;text-align:start}
+.bld-nic .l2{font-size:11px;color:#707070;line-height:1.3;text-align:start}
+.bld-create{text-align:center;font-size:13px;color:#707070;margin-top:4px}
+.bld-create button{color:var(--green);font-weight:600;background:none;border:none;cursor:pointer;font-size:13px;padding:0}
+.bld-create button:hover{text-decoration:underline}
+.bld-langrow{display:flex;justify-content:flex-end;margin-top:14px}
+.bld-lang2{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#707070;cursor:pointer;background:none;border:none;padding:4px 8px}
+.bld-lang2:hover{color:var(--green)}
+.bld-copy{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:12px;z-index:3;padding:0 12px}
+@media(max-width:820px){.bld-row2{flex-direction:column;gap:1rem}.bld-brand-area{display:none}.bld-card-col{flex:none;max-width:100%}.bld-card{max-width:460px;padding:32px 24px}}
 
 </style>
 </head>
@@ -339,6 +454,11 @@ function buildForecast(scn){
 const I18N = {
   en:{
     appName:"Dynamic Subsidy Allocation & Optimization",
+    sso_title:"Momrah Single Sign-On", sso_sub:"Unified national access to the Ministry of Municipalities & Housing digital services.", identity:"Identity",
+    signInTitle:"Sign In", forgotPwd:"Forgot password?", securityCode:"Security code", or_:"or",
+    nafath:"Nafath national access", noAccount:"Don't have an account?", createAccount:"Create New Account",
+    nic1:"NIC", nic2:"National Identity Card", identityPh:"Select identity",
+    copyright:"© 2026 — Ministry of Municipalities & Housing · Housing Support Agency", brandLine:"Dynamic Subsidy Allocation", login_btn:"Login",
     ministry:"Ministry of Municipalities & Housing", agency:"Housing Support Agency",
     syntheticData:"Synthetic demo data — not real beneficiaries",
     login:"Sign in", username:"Username", password:"Password", chooseRole:"Select a demo identity",
@@ -397,7 +517,7 @@ const I18N = {
     approvals_sub:"Review tactical recommendations submitted by analysts.",
     cockpit_sub:"Strategic KPIs and items requiring ministerial adjudication.",
     decisions_sub:"Items escalated for strategic adjudication (caps / internal regulations).",
-    audit_sub:"Every submission, approval, rejection and adjudication is recorded.",
+    audit_sub:"Every submission, approval, rejection and adjudication is recorded.", auditDetail:"Audit trail detail", openHint:"Click a work order # to view details",
     copilot_sub:"Approved outputs are delivered to Housing Copilot via the API Contract.",
     deliver:"Deliver to Housing Copilot", opening:"Opening Housing Copilot…",
     redline:"The system only recommends. It never auto-approves, never auto-suspends support, never edits regulations.",
@@ -416,9 +536,16 @@ const I18N = {
     td_whatif:"Run What-if for the interest-rate scenario", td_packages:"Submit assembled decision packages",
     td_copilot:"Deliver approved outputs to Housing Copilot",
     due_today:"Due today", due_3:"3 open", due_2:"2 ready", due_soon:"This week", due_1:"1 pending",
+    svc_section:"Key Services", btn_details:"Details", btn_open:"Open", aiWorking:"Agents orchestrating…", cycleDone:"Cycle complete — sources refreshed",
+    tag_auto:"Automated daily", tag_monthly:"Monthly cycle", tag_ai:"AI · live", tag_explain:"Explainable", tag_audit:"Audit-logged", tag_api:"API contract",
   },
   ar:{
     appName:"التخصيص الديناميكي للدعم وتحسينه",
+    sso_title:"النفاذ الموحد", sso_sub:"النفاذ الوطني الموحد إلى الخدمات الرقمية لوزارة البلديات والإسكان.", identity:"الهوية",
+    signInTitle:"تسجيل الدخول", forgotPwd:"نسيت كلمة المرور؟", securityCode:"الرمز المرئي", or_:"أو",
+    nafath:"الدخول عبر نفاذ", noAccount:"ليس لديك حساب؟", createAccount:"إنشاء حساب جديد",
+    nic1:"الهوية", nic2:"بطاقة الهوية الوطنية", identityPh:"اختر الهوية",
+    copyright:"© ٢٠٢٦ — وزارة البلديات والإسكان · هيئة الدعم السكني", brandLine:"التخصيص الديناميكي للدعم", login_btn:"دخول",
     ministry:"وزارة البلديات والإسكان", agency:"هيئة الدعم السكني",
     syntheticData:"بيانات تجريبية اصطناعية — ليست مستفيدين حقيقيين",
     login:"تسجيل الدخول", username:"اسم المستخدم", password:"كلمة المرور", chooseRole:"اختر هوية تجريبية",
@@ -469,7 +596,7 @@ const I18N = {
     approvals_sub:"راجع التوصيات التكتيكية المرفوعة من المحللين.",
     cockpit_sub:"مؤشرات استراتيجية وبنود تتطلب بتّ الوزير.",
     decisions_sub:"بنود مرفوعة للبتّ الاستراتيجي (السقوف / اللوائح الداخلية).",
-    audit_sub:"يُسجّل كل رفع واعتماد ورفض وبتّ.",
+    audit_sub:"يُسجّل كل رفع واعتماد ورفض وبتّ.", auditDetail:"تفاصيل سجل التدقيق", openHint:"اضغط رقم أمر العمل لعرض التفاصيل",
     copilot_sub:"تُسلَّم المخرجات المعتمدة إلى مساعد الإسكان عبر عقد الـ API.",
     deliver:"التسليم إلى مساعد الإسكان", opening:"جارٍ فتح مساعد الإسكان…",
     redline:"النظام يوصي فقط: لا يعتمد آلياً، ولا يوقف الدعم آلياً، ولا يعدّل اللوائح.",
@@ -488,6 +615,8 @@ const I18N = {
     td_whatif:"تشغيل محاكاة لسيناريو سعر الفائدة", td_packages:"رفع حزم القرار المُجمّعة",
     td_copilot:"تسليم المخرجات المعتمدة إلى مساعد الإسكان",
     due_today:"مستحق اليوم", due_3:"٣ مفتوحة", due_2:"٢ جاهزة", due_soon:"هذا الأسبوع", due_1:"١ معلّق",
+    svc_section:"الخدمات الرئيسية", btn_details:"تفاصيل", btn_open:"فتح", aiWorking:"الوكلاء يعملون…", cycleDone:"اكتملت الدورة — تم تحديث المصادر",
+    tag_auto:"آلي يومي", tag_monthly:"دورة شهرية", tag_ai:"ذكاء · مباشر", tag_explain:"قابل للتفسير", tag_audit:"مُسجّل", tag_api:"عقد API",
   }
 };
 
@@ -511,13 +640,15 @@ function useMoney(){ const {currency}=useStore(); const pre = currency==="symbol
 /* =========================================================================
    UI atoms
    ========================================================================= */
+const GlobeIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>);
+const ArrowIcon = (<svg className="ic-svg ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>);
 function KPI({label,value,sub,tone}){
   const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
   return (<div className="kpi"><div className="label">{label}</div>
     <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub muted">{sub}</div>}</div>);
 }
 function Section({title,sub,right,children}){
-  return (<div className="card pad" style={{marginBottom:16}}>
+  return (<div className="card pad acc" style={{marginBottom:16}}>
     <div className="page-h" style={{marginBottom:sub?12:8}}>
       <div><h2 style={{fontSize:16}}>{title}</h2>{sub&&<div className="sub muted">{sub}</div>}</div>{right}</div>
     {children}</div>);
@@ -531,38 +662,105 @@ function Bar({label,v,max,color}){ return (<div style={{marginBottom:8}}>
    Login
    ========================================================================= */
 const ROLE_KEYS = ["analyst","owner","minister"];
+const Skyline = (
+  <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="bldsky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#13796a"/><stop offset="0.55" stopColor="#0d5a4f"/><stop offset="1" stopColor="#093b35"/>
+      </linearGradient>
+    </defs>
+    <rect width="1440" height="700" fill="url(#bldsky)"/>
+    <circle cx="1180" cy="150" r="60" fill="#1aa07f" opacity="0.25"/>
+    <g fill="#0c4a40">
+      <rect x="40" y="420" width="120" height="280"/><rect x="200" y="360" width="90" height="340"/>
+      <rect x="330" y="300" width="70" height="400"/><rect x="430" y="440" width="110" height="260"/>
+      <rect x="580" y="250" width="60" height="450"/><rect x="660" y="330" width="100" height="370"/>
+      <rect x="800" y="280" width="80" height="420"/><rect x="900" y="420" width="120" height="280"/>
+      <rect x="1060" y="320" width="80" height="380"/><rect x="1170" y="380" width="100" height="320"/>
+      <rect x="1300" y="300" width="90" height="400"/>
+    </g>
+    <g fill="#0f5a4c">
+      <rect x="150" y="470" width="70" height="230"/><rect x="290" y="410" width="50" height="290"/>
+      <rect x="520" y="380" width="70" height="320"/><rect x="760" y="440" width="60" height="260"/>
+      <rect x="1010" y="470" width="60" height="230"/><rect x="1250" y="440" width="60" height="260"/>
+    </g>
+    <g fill="#f8c630" opacity="0.16">
+      <rect x="350" y="330" width="8" height="12"/><rect x="368" y="330" width="8" height="12"/><rect x="350" y="360" width="8" height="12"/>
+      <rect x="598" y="290" width="8" height="12"/><rect x="598" y="320" width="8" height="12"/><rect x="616" y="290" width="8" height="12"/>
+      <rect x="820" y="320" width="8" height="12"/><rect x="838" y="320" width="8" height="12"/><rect x="820" y="350" width="8" height="12"/>
+      <rect x="1078" y="360" width="8" height="12"/><rect x="1078" y="390" width="8" height="12"/><rect x="1318" y="340" width="8" height="12"/>
+    </g>
+  </svg>
+);
+function genCode(){ const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s=""; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 function Login(){
   const {t,setUser,lang,setLang}=useStore();
   const [role,setRole]=useState("analyst");
-  return (<div className="login-wrap">
-    <div className="login-card fade">
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:40,height:40,borderRadius:10,background:"var(--green)",color:"#fff",display:"grid",placeItems:"center",fontWeight:800}}>م</div>
-          <div><div style={{fontWeight:700}}>{t("ministry")}</div><div className="muted" style={{fontSize:12}}>{t("agency")}</div></div>
+  const [code,setCode]=useState(genCode);
+  const [showPwd,setShowPwd]=useState(false);
+  return (<div className="bld-login">
+    <div className="bld-bg">{Skyline}</div>
+    <div className="bld-photo"/>
+    <div className="bld-overlay"/>
+    <div className="bld-center">
+      <div className="bld-wrap">
+        <div className="bld-row2">
+          <div className="bld-brand-area">
+            <div className="bld-logo">
+              <img className="bld-logo-img" src="assets/logo.png" alt="MoMaH"
+                   onError={e=>{e.currentTarget.style.display="none";}}/>
+              <span className="bld-logo-cap">{t("brandLine")}</span>
+            </div>
+            <h3 style={{color:"#fff"}}>{t("sso_title")}</h3>
+            <p>{t("sso_sub")}</p>
+          </div>
+          <div className="bld-card-col">
+            <div className="bld-card fade">
+              <h2>{t("signInTitle")}</h2>
+              <div className="bld-fg">
+                <label>{t("identity")}</label>
+                <div className="bld-inp">
+                  <span className="ic">👤</span>
+                  <select value={role} onChange={e=>setRole(e.target.value)}>
+                    {ROLE_KEYS.map(rk=><option key={rk} value={rk}>{t(rk+"_full")}</option>)}
+                  </select>
+                  <span className="caret">▾</span>
+                </div>
+              </div>
+              <div className="bld-fg">
+                <label>{t("password")}</label>
+                <div className="bld-inp has-eye">
+                  <span className="ic">🔒</span>
+                  <input type={showPwd?"text":"password"} value="********" readOnly/>
+                  <span className="eye" onClick={()=>setShowPwd(s=>!s)} title="Show/Hide">👁</span>
+                </div>
+              </div>
+              <div className="bld-hint">{t("loginHint")}</div>
+              <div className="bld-captcha">
+                <div className="bld-code"><span>{code}</span></div>
+                <button className="bld-refresh" onClick={()=>setCode(genCode())} title="Refresh">⟳</button>
+                <input placeholder={t("securityCode")} maxLength={6}/>
+              </div>
+              <button className="bld-btn" onClick={()=>setUser(role)}>{t("login_btn")}</button>
+              <div className="bld-or">{t("or_")}</div>
+              <button className="bld-nic" onClick={()=>setUser(role)}>
+                <div className="bld-nic-grid">
+                  <i className="g"/><i className="k"/><i className="o"/>
+                  <i className="k"/><i className="g"/><i className="k"/>
+                  <i className="o"/><i className="k"/><i className="g"/>
+                </div>
+                <div><div className="l1">{t("nic1")}</div><div className="l2">{t("nic2")}</div></div>
+              </button>
+              <div className="bld-create">{t("noAccount")} <button>{t("createAccount")}</button></div>
+              <div className="bld-langrow">
+                <button className="bld-lang2" onClick={()=>setLang(lang==="en"?"ar":"en")}>{GlobeIcon} {lang==="en"?"EN / العربية":"العربية / EN"}</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <button className="btn ghost sm" onClick={()=>setLang(lang==="en"?"ar":"en")}>{lang==="en"?"العربية":"EN"}</button>
       </div>
-      <h1 style={{fontSize:20,marginBottom:2}}>{t("appName")}</h1>
-      <div className="muted" style={{fontSize:12.5,marginBottom:16}}>{t("login")}</div>
-      <div className="field"><label>{t("chooseRole")}</label>
-        <div className="role-pick">
-          {ROLE_KEYS.map(rk=>(
-            <button key={rk} className={"role-opt"+(role===rk?" sel":"")} onClick={()=>setRole(rk)}>
-              <span className="av">{t(rk).slice(0,1)}</span>
-              <span style={{flex:1}}><span style={{fontWeight:700,display:"block"}}>{t(rk+"_full")}</span>
-                <span className="muted" style={{fontSize:12}}>{t(rk+"_desc")}</span></span>
-              {role===rk&&<span style={{color:"var(--green)",fontWeight:800}}>✓</span>}
-            </button>))}
-        </div>
-      </div>
-      <div className="field"><label>{t("username")}</label>
-        <input className="input" value={t(role)} readOnly/></div>
-      <div className="field"><label>{t("password")}</label>
-        <input className="input" type="password" value="********" readOnly/></div>
-      <button className="btn" style={{width:"100%",justifyContent:"center"}} onClick={()=>setUser(role)}>{t("enter")}</button>
-      <div className="muted" style={{fontSize:11.5,marginTop:10,textAlign:"center"}}>{t("loginHint")}</div>
     </div>
+    <div className="bld-copy">{t("copyright")} · {t("syntheticData")}</div>
   </div>);
 }
 
@@ -577,8 +775,7 @@ function TopBar(){
       <div><div style={{fontSize:14}}>{t("appName")}</div>
         <div style={{fontSize:11,opacity:.85,fontWeight:500}}>{t("agency")}</div></div></div>
     <div className="right">
-      <span className="chip gold" style={{background:"rgba(255,255,255,.15)",color:"#fff"}}>● {t("syntheticData")}</span>
-      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>🌐 {lang==="en"?"العربية":"English"}</button>
+      <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}>{GlobeIcon} {lang==="en"?"العربية":"English"}</button>
       <button className="tbtn" onClick={()=>setCurrency(currency==="SAR"?"symbol":"SAR")}>{currency==="SAR"?"SAR":"⃁"}</button>
       <div className="usermenu">
         <button className="tbtn" onClick={()=>setOpen(o=>!o)}>👤 {t(user)} ▾</button>
@@ -649,7 +846,7 @@ function AnalystHome(){
         <span className="av sm">{it.ic}</span>
         <div style={{flex:1}}><div style={{fontWeight:600}}>{t(it.k)}</div></div>
         <span className={"chip "+it.chip}>{t(it.due)}</span>
-        <button className="btn ghost sm" onClick={()=>setRoute(it.route)}>{t("more")} →</button>
+        <button className="btn secondary sm" onClick={()=>setRoute(it.route)}>{t("more")} {ArrowIcon}</button>
       </div>))}
     </Section>
     <Section title={t("quickActions")}>
@@ -664,20 +861,37 @@ function AnalystHome(){
 /* ---- Data readiness (UC-02) ---- */
 function DataReadiness(){
   const {t}=useStore();
+  const [sources,setSources]=useState(DATA_SOURCES);
   const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
-  function run(){ setRunning(true); setDone(false); setProg(0);
-    let p=0; const id=setInterval(()=>{ p+=10; setProg(p); if(p>=100){clearInterval(id);setRunning(false);setDone(true);} },120); }
+  const [flash,setFlash]=useState(false); const [ranOnce,setRanOnce]=useState(false);
+  function run(){
+    setRunning(true); setDone(false); setProg(0); setFlash(false);
+    let p=0; const id=setInterval(()=>{ p+=10; setProg(p);
+      if(p>=100){ clearInterval(id); setRunning(false); setDone(true); setRanOnce(true);
+        setSources(prev=>prev.map(s=>({
+          ...s,
+          records: s.records + Math.max(1, Math.round(s.records*(0.001+Math.random()*0.004))),
+          quality: Math.min(99, s.quality + 1 + Math.floor(Math.random()*2)),
+          completeness: Math.min(99, s.completeness + 1 + Math.floor(Math.random()*2)),
+          delta: +(Math.random()*1.7 - 0.3).toFixed(1),
+          updated: s.status==="ok" ? "Just now" : s.updated,
+        })));
+        setFlash(true); setTimeout(()=>setFlash(false), 1300);
+      }
+    },110);
+  }
   return (<div className="fade">
     <PageHeader title={t("nav_data")} sub={t("data_sub")}
       right={<button className="btn" onClick={run} disabled={running}>{running?t("running"):t("runCycle")}</button>}/>
     <Section title="BIDSC">
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
         <div style={{flex:1}}><Progress v={prog/100}/></div>
-        <span className="chip">{done?("✓ "+t("bidscDone")):(t("writingBidsc")+" "+prog+"%")}</span>
+        <span className="chip">{running?(t("writingBidsc")+" "+prog+"%"):("✓ "+t("bidscDone"))}</span>
       </div>
+      {ranOnce&&done&&<div className="muted" style={{fontSize:12,marginTop:8}}>✓ {t("cycleDone")}</div>}
     </Section>
-    <div className="cols-3">
-      {DATA_SOURCES.map(s=>{
+    <div className={"cols-3"+(flash?" flash-sources":"")}>
+      {sources.map(s=>{
         const tone=s.status==="ok"?"var(--green)":s.status==="pending"?"var(--amber)":"var(--danger)";
         const dCol=s.delta>0?"var(--green)":s.delta<0?"var(--danger)":"var(--muted)";
         const dStr=(s.delta>0?"▲ +":s.delta<0?"▼ ":"– ")+Math.abs(s.delta)+"%";
@@ -814,6 +1028,7 @@ function WhatIf(){
   const [nl,setNl]=useState("");
   const [chain,setChain]=useState(["idle","idle","idle","idle"]);
   const [busy,setBusy]=useState(false);
+  const [flash,setFlash]=useState(false);
   const scn=useMemo(()=>computeAllocation(p),[p]);
   const sv=scenarioSavings(scn);
   const C=RC;
@@ -821,7 +1036,7 @@ function WhatIf(){
     setBusy(true); const seq=["idle","idle","idle","idle"];
     [0,1,2,3].forEach((i)=>{
       setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="run";return n;}); },i*450);
-      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then();} },i*450+380);
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setFlash(true); setTimeout(()=>setFlash(false),1100);} },i*450+380);
     });
   }
   function runSim(){ animateChain(); }
@@ -857,6 +1072,8 @@ function WhatIf(){
         <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
         <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
       </div>
+      {busy&&<div className="ai-scan"><span/></div>}
+      {busy&&<div className="ai-working">✦ {t("aiWorking")}</div>}
       <OrchestrationChain states={chain}/>
     </Section>
     <div className="cols-2">
@@ -867,7 +1084,7 @@ function WhatIf(){
         <Slider lk="lv_offplan" field="offPlanPct" max="20"/>
       </Section>
       <div>
-        <div className="cols-3" style={{marginBottom:16}}>
+        <div className={"cols-3"+(flash?" flash-kpis":"")} style={{marginBottom:16}}>
           <KPI label={t("kpi_savings")} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
           <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
           <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
@@ -965,7 +1182,7 @@ function OwnerHome(){
       <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} tone="warn"/>
       <KPI label={t("kpi_adoption")} value="65%" sub={t("target")+" 75%"}/>
     </div>
-    <Section title={t("nav_approvals")} right={<button className="btn sm" onClick={()=>setRoute("approvals")}>{t("view")}</button>}>
+    <Section title={t("nav_approvals")} right={<button className="btn sm" onClick={()=>setRoute("approvals")}>{t("view")} {ArrowIcon}</button>}>
       <div className="muted">{pending? (pending+" · "+t("pkgStatus_submitted")) : t("noItems")}</div>
     </Section>
   </div>);
@@ -994,15 +1211,26 @@ function MinisterHome(){
         <span className="chip">Dev. {n0(BRD.targetBreakdown.devHousing)}</span>
       </div>
     </Section>
-    <Section title={t("nav_decisions")} right={<button className="btn sm" onClick={()=>setRoute("decisions")}>{t("view")}</button>}>
+    <Section title={t("nav_decisions")} right={<button className="btn sm" onClick={()=>setRoute("decisions")}>{t("view")} {ArrowIcon}</button>}>
       <div className="muted">{pending? (pending+" · "+t("pkgStatus_escalated")) : t("noItems")}</div>
     </Section>
   </div>);
 }
 
 /* ---- Audit trail ---- */
+function Modal({title,onClose,children}){
+  return (<div className="modal-ov" onClick={onClose}>
+    <div className="modal-box fade" onClick={e=>e.stopPropagation()}>
+      <div className="modal-head"><h3>{title}</h3><button className="modal-x" onClick={onClose} aria-label="close">✕</button></div>
+      <div className="modal-body">{children}</div>
+    </div>
+  </div>);
+}
 function AuditTrailPage(){
-  const {t,audit}=useStore();
+  const {t,audit,packages}=useStore(); const {money}=useMoney();
+  const [sel,setSel]=useState(null);
+  const pkg = sel ? packages.find(p=>p.id===sel) : null;
+  const levers = pkg ? leverSummary(t,pkg.params||{}) : [];
   return (<div className="fade">
     <PageHeader title={t("nav_audit")} sub={t("audit_sub")}/>
     <div className="card pad">
@@ -1013,7 +1241,7 @@ function AuditTrailPage(){
           <th>{t("colStatus")}</th><th>{t("time")}</th><th>{t("note")}</th>
         </tr></thead>
         <tbody>{audit.map((a,i)=>(<tr key={i}>
-          <td className="mono"><span className="wo">#{a.target}</span></td>
+          <td className="mono"><button className="wo wo-btn" onClick={()=>setSel(a.target)} title={t("auditDetail")}>#{a.target}</button></td>
           <td><span className="tag">{t(a.role)}</span></td>
           <td>{t(a.action)}</td>
           <td>{a.status? statusChip(t,a.status) : "—"}</td>
@@ -1021,7 +1249,31 @@ function AuditTrailPage(){
           <td className="muted">{a.note||"—"}</td>
         </tr>))}</tbody>
       </table></div>}
+      {audit.length>0&&<div className="muted" style={{fontSize:12,marginTop:10}}>{t("openHint")}</div>}
     </div>
+    {pkg && <Modal title={t("auditDetail")} onClose={()=>setSel(null)}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,marginBottom:10}}>
+        <span className="wo">#{pkg.id}</span>{statusChip(t,pkg.status)}
+      </div>
+      <h4 style={{margin:"0 0 14px",fontSize:16}}>{pkg.title}</h4>
+      <div className="muted" style={{fontSize:12,marginBottom:6}}>{t("leversUsed")}</div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}}>
+        {levers.length? levers.map((l,i)=><span key={i} className="chip gray">{l[0]} <b style={{marginInlineStart:4}}>{l[1]}</b></span>)
+          : <span className="muted" style={{fontSize:12}}>{t("noLevers")}</span>}
+      </div>
+      <div className="cols-3" style={{marginBottom:16}}>
+        <div className="mini-kpi"><div className="muted">{t("kpi_savings")}</div><div className="v" style={{color:"var(--green)"}}>{money(pkg.kpis.savingsPhase)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_fairness")}</div><div className="v">{pkg.kpis.fg.toFixed(2)}</div></div>
+        <div className="mini-kpi"><div className="muted">{t("kpi_hbr")}</div><div className="v">{pct1(pkg.kpis.hbr)}</div></div>
+      </div>
+      <div className="divider"/>
+      <div className="muted" style={{fontSize:12,marginBottom:10}}>{t("nav_audit")}</div>
+      <div className="timeline">
+        {pkg.history.map((h,i)=>(<div key={i} className="ev"><div style={{fontSize:12.5}}>
+          <span className="tag">{t(h.role)}</span> <b>{t(h.action)}</b> {h.note?("· "+h.note):""}</div>
+          <div className="muted" style={{fontSize:11}}>{h.ts}</div></div>))}
+      </div>
+    </Modal>}
   </div>);
 }
 
