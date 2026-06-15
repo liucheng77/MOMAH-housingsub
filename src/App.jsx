@@ -359,6 +359,25 @@ function useMoney(){ const {currency}=useStore(); const pre = currency==="symbol
 const GlobeIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3z"/></svg>);
 const ArrowIcon = (<svg className="ic-svg ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>);
 const UserIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>);
+const BellIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>);
+const SEED_NOTIFS = [{id:1,k:"ntf_sla",tone:"amber",ts:"2h ago"},{id:2,k:"ntf_leak",tone:"danger",ts:"5h ago"},{id:3,k:"ntf_budget",tone:"amber",ts:"1d ago"},{id:4,k:"ntf_sync",tone:"info",ts:"Today 06:00"}];
+function NotifBell(){
+  const {t}=useStore(); const [open,setOpen]=useState(false);
+  const list=SEED_NOTIFS;
+  return (<div className="usermenu">
+    <button className="tbtn" onClick={()=>setOpen(o=>!o)} style={{position:"relative"}} aria-label={t("notifications")}>
+      {BellIcon}{list.length>0&&<span className="notif-badge">{list.length}</span>}
+    </button>
+    {open&&<div className="panel" onMouseLeave={()=>setOpen(false)} style={{minWidth:312}}>
+      <div style={{fontWeight:700,padding:"4px 8px 8px"}}>{t("notifications")}</div>
+      {list.length===0? <div className="muted" style={{padding:8}}>{t("noNotifs")}</div>
+        : list.map(n=>(<div key={n.id} className="notif-row">
+            <span className="dot" style={{background:n.tone==="danger"?"var(--danger)":n.tone==="amber"?"var(--amber)":"var(--info)",marginTop:5}}/>
+            <div style={{flex:1}}><div style={{fontSize:12.5,lineHeight:1.4}}>{t(n.k)}</div><div className="muted" style={{fontSize:11,marginTop:2}}>{n.ts}</div></div>
+          </div>))}
+    </div>}
+  </div>);
+}
 function KPI({label,value,sub,tone}){
   const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
   return (<div className={"kpi"+(tone?" kpi-"+tone:"")}><div className="label">{label}</div>
@@ -497,6 +516,7 @@ function TopBar(){
     <div className="right">
       <button className="tbtn" onClick={()=>setLang(lang==="en"?"ar":"en")}><img className="ic-lang" src="/assets/icon-language.svg" alt="" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/icon-language.svg";} else if(f==="1"){im.dataset.f="2";im.src="assets/icon-language.svg";} else im.style.display="none";}}/> {lang==="en"?"العربية":"English"}</button>
       <button className="tbtn" onClick={()=>setCurrency(currency==="SAR"?"symbol":"SAR")}>{currency==="SAR"?"SAR":"⃁"}</button>
+      <NotifBell/>
       <div className="usermenu">
         <button className="tbtn" onClick={()=>setOpen(o=>!o)}>{UserIcon} {t(user)} ▾</button>
         {open&&<div className="panel" onMouseLeave={()=>setOpen(false)}>
@@ -973,10 +993,15 @@ function WhatIf(){
     });
     setRoute("packages");
   }
+  const blowBase=BASELINE.rows.filter(r=>r.below).reduce((s,r)=>s+r.contracts,0);
+  const blowScn=scn.rows.filter(r=>r.below).reduce((s,r)=>s+r.contracts,0);
+  const reclassified=Math.round(Math.abs(p.reallocatePct)*8500);
   const cmp=[
-    {k:t("kpi_savings"),b:"0",a:money(sv.phase),tone:"good"},
+    {k:t("kpi_savings"),b:money(0),a:money(sv.phase),tone:"good"},
+    {k:t("cmp_contractsLow"),b:n0(blowBase),a:n0(blowScn),tone:"good"},
     {k:t("kpi_fairness"),b:BASELINE.FG.toFixed(2),a:scn.FG.toFixed(2),tone:scn.FG>=1?"good":"warn"},
     {k:t("kpi_hbr"),b:pct1(BASELINE.HBR),a:pct1(scn.HBR),tone:"good"},
+    {k:t("cmp_commit"),b:money(BASELINE.spend*15),a:money(scn.spend*15),tone:"good"},
   ];
   const Slider=({lk,field,max})=>(<div className="field">
     <label style={{display:"flex",justifyContent:"space-between"}}><span>{t(lk)}</span><span className="mono">{Math.round(p[field]*100)}%</span></label>
@@ -1006,10 +1031,11 @@ function WhatIf(){
           <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
           <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
         </div>
-        <Section title={t("compare")}>
-          <table className="tbl"><thead><tr><th></th><th className="right-num">{t("before")}</th><th className="right-num">{t("after")}</th></tr></thead>
+        <Section title={t("compare")} sub={t("compareNote")}>
+          <table className="tbl"><thead><tr><th></th><th className="right-num">{t("current")}</th><th className="right-num">{t("scenario")}</th></tr></thead>
             <tbody>{cmp.map((r,i)=>(<tr key={i}><td>{r.k}</td><td className="right-num mono muted">{r.b}</td>
               <td className="right-num mono" style={{fontWeight:700,color:r.tone==="good"?"var(--green)":"var(--amber)"}}>{r.a}</td></tr>))}</tbody></table>
+          <div className="muted" style={{fontSize:12.5,marginTop:10}}>{t("cmp_recls")}: <b style={{color:"var(--green)"}}>{n0(reclassified)}</b></div>
         </Section>
       </div>
     </div>
@@ -1058,6 +1084,17 @@ function PackageCard({pkg}){
         <div className="mini-kpi"><div className="muted">{t("kpi_hbr")}</div><div className="v">{pct1(pkg.kpis.hbr)}</div></div>
       </div>
     </div>
+    {(pkg.status==="submitted"||pkg.status==="escalated")&&typeof pkg.sla==="number"&&(()=>{
+      const win=pkg.status==="submitted"?48:72; const left=Math.max(0,pkg.sla); const used=Math.min(1,(win-left)/win);
+      const col=left<=0?"var(--danger)":left<12?"var(--danger)":left<24?"var(--amber)":"var(--green)";
+      return (<div style={{marginTop:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}>
+          <span className="muted">⏱ {t("sla_window")} ({win}h)</span>
+          <span className="mono" style={{color:col,fontWeight:700}}>{left<=0?t("sla_overdue"):(left+"h "+t("sla_left"))}</span>
+        </div>
+        <div className="progress"><span style={{width:(used*100)+"%",background:col}}/></div>
+      </div>);
+    })()}
     {pkg.affectsCap&&pkg.status!=="adjudicated"&&pkg.status!=="rejected"&&
       <div className="banner" style={{marginTop:10}}>⚖ {t("needsMinister")}</div>}
     {(canOwner||canMin)&&<div style={{marginTop:12}}>
@@ -1300,6 +1337,9 @@ Object.assign(I18N.ar,{ leak_report:"رفع", leak_cases:"حالات", leak_big:
 Object.assign(I18N.en,{ syncOk:"Daily data sync succeeded", syncFail:"Daily data sync failed", importTitle:"Import to BIDSC", dropHint:"Drag a file here, or click to choose", validating:"Validating data accuracy…", checkPass:"Validation passed — ready to import", checkFail:"Validation failed — completeness <90% or exceptions >10%", importBtn:"Import to BIDSC", fileLabel:"File" });
 Object.assign(I18N.zh,{ syncOk:"每日数据同步成功", syncFail:"每日数据同步失败", importTitle:"导入到 BIDSC", dropHint:"拖拽文件到此，或点击选择", validating:"正在校验数据准确性…", checkPass:"校验通过 — 可导入", checkFail:"校验未通过 — 完整度 <90% 或异常 >10%", importBtn:"导入到 BIDSC", fileLabel:"文件" });
 Object.assign(I18N.ar,{ syncOk:"نجحت المزامنة اليومية للبيانات", syncFail:"فشلت المزامنة اليومية للبيانات", importTitle:"استيراد إلى BIDSC", dropHint:"اسحب ملفاً هنا أو اضغط للاختيار", validating:"جارٍ التحقق من دقة البيانات…", checkPass:"اجتاز التحقق — جاهز للاستيراد", checkFail:"فشل التحقق — الاكتمال <٩٠٪ أو الاستثناءات >١٠٪", importBtn:"استيراد إلى BIDSC", fileLabel:"الملف" });
+Object.assign(I18N.en,{ sla_window:"Response SLA", sla_left:"left", sla_overdue:"Overdue — escalated", cmp_commit:"Commitments to 2050", cmp_recls:"Households reclassified", cmp_contractsLow:"Contracts to <10k", compareNote:"Compared against the current approved plan (baseline).", notifications:"Notifications", noNotifs:"You're all caught up.", ntf_sla:"Decision package WO-2026-0309 awaiting approval · 8h left", ntf_leak:"Leakage LK-2026-021 escalated to the Minister", ntf_budget:"Budget balance not updated for 18 days", ntf_sync:"Daily data sync completed" });
+Object.assign(I18N.zh,{ sla_window:"响应时限", sla_left:"剩余", sla_overdue:"已超时 — 已升级", cmp_commit:"至 2050 承诺", cmp_recls:"重新分类家庭数", cmp_contractsLow:"流向 <1万 合同", compareNote:"对照当前已批准方案（基线）。", notifications:"通知", noNotifs:"暂无新通知。", ntf_sla:"决策包 WO-2026-0309 待审批 · 剩余 8 小时", ntf_leak:"漏损 LK-2026-021 已升级至部长", ntf_budget:"预算余额已 18 天未更新", ntf_sync:"每日数据同步已完成" });
+Object.assign(I18N.ar,{ sla_window:"مهلة الاستجابة", sla_left:"متبقٍ", sla_overdue:"تجاوز المهلة — تم التصعيد", cmp_commit:"الالتزامات حتى ٢٠٥٠", cmp_recls:"الأسر المُعاد تصنيفها", cmp_contractsLow:"عقود لأقل من ١٠ك", compareNote:"بالمقارنة مع الخطة المعتمدة الحالية (الأساس).", notifications:"الإشعارات", noNotifs:"لا إشعارات جديدة.", ntf_sla:"حزمة القرار WO-2026-0309 بانتظار الاعتماد · متبقٍ ٨ ساعات", ntf_leak:"التسرب LK-2026-021 صُعّد إلى الوزير", ntf_budget:"لم يُحدّث رصيد الميزانية منذ ١٨ يوماً", ntf_sync:"اكتملت المزامنة اليومية للبيانات" });
 Object.assign(I18N.en,{ qreport:"Data quality report", totalRecords:"Total records", avgCompleteness:"Avg. completeness", exceptions:"Exceptions", thresholdNote:"Min. for BIDSC 90% · halts if exceptions >10%", qOk:"Within thresholds", qBelow:"Below 90% — analyst review required", qExc:"Exceptions >10% — update halted, analyst alerted", budgetBalance:"Budget balance", budgetSub:"Entered manually by the Business Owner from the official financial report.", bud_cash:"Cash support (monthly + package)", bud_inkind:"In-kind support (off-plan land discount)", bud_ceiling:"Interest support ceiling (bank agreements)", saveBalance:"Save balance", enteredBy:"Entered by", budStale:"No balance for >30 days — analyst & owner alerted.", ownerOnlyBudget:"Budget balance is entered by the Business Owner.", uploadBidsc:"Upload to BIDSC", uploadHint:"Manual upload until source integrations are ready.", uploadedOk:"uploaded to BIDSC", rulesTitle:"Key rules & exceptions", rule1:"Min. completeness to write BIDSC: 90% (adjustable).", rule2:"If exceptions exceed 10%, the update is halted and the analyst is alerted.", rule3:"If a source is unavailable, the last saved data is used with a warning.", rule4:"If no budget balance for 30+ days, analyst & owner are alerted.", rule5:"Allocation, Forecast & Beneficiary-tracking don't run until this cycle completes.", mSar:"M SAR" });
 Object.assign(I18N.zh,{ qreport:"数据质量报告", totalRecords:"总记录数", avgCompleteness:"平均完整度", exceptions:"异常率", thresholdNote:"写入 BIDSC 最低 90% · 异常 >10% 即停止", qOk:"在门槛内", qBelow:"低于 90% — 需分析师复核", qExc:"异常 >10% — 更新已停止，已通知分析师", budgetBalance:"预算余额", budgetSub:"由业务负责人依据官方财务报告手工录入。", bud_cash:"现金支援预算（月度 + 套餐）", bud_inkind:"实物支援预算（期房土地折扣）", bud_ceiling:"利息支援上限（银行协议总额）", saveBalance:"保存余额", enteredBy:"录入人", budStale:"已超 30 天未录入余额 — 已告警分析师与业务负责人。", ownerOnlyBudget:"预算余额由业务负责人录入。", uploadBidsc:"上传到 BIDSC", uploadHint:"在数据源集成就绪前用手工上传。", uploadedOk:"已上传到 BIDSC", rulesTitle:"关键规则与异常", rule1:"写入 BIDSC 的最低完整度：90%（可调）。", rule2:"异常超过 10% 时停止更新并通知分析师。", rule3:"数据源不可用时，沿用最近一次有效数据并记警告。", rule4:"超过 30 天未录入预算余额，同时告警分析师与业务负责人。", rule5:"本循环未完成前，配分、预测、受益人追踪均不运行。", mSar:"百万 SAR" });
 Object.assign(I18N.ar,{ qreport:"تقرير جودة البيانات", totalRecords:"إجمالي السجلات", avgCompleteness:"متوسط الاكتمال", exceptions:"الاستثناءات", thresholdNote:"الحد الأدنى لـ BIDSC ٩٠٪ · يتوقف إذا تجاوزت الاستثناءات ١٠٪", qOk:"ضمن الحدود", qBelow:"أقل من ٩٠٪ — يتطلب مراجعة المحلل", qExc:"الاستثناءات >١٠٪ — أُوقف التحديث وأُبلغ المحلل", budgetBalance:"رصيد الميزانية", budgetSub:"يُدخله مالك الأعمال يدوياً من التقرير المالي الرسمي.", bud_cash:"الدعم النقدي (شهري + باقة)", bud_inkind:"الدعم العيني (خصم أرض البيع على الخارطة)", bud_ceiling:"سقف دعم الفائدة (اتفاقيات البنوك)", saveBalance:"حفظ الرصيد", enteredBy:"أدخله", budStale:"لا رصيد منذ أكثر من ٣٠ يوماً — تم تنبيه المحلل ومالك الأعمال.", ownerOnlyBudget:"يُدخل رصيد الميزانية مالك الأعمال.", uploadBidsc:"رفع إلى BIDSC", uploadHint:"رفع يدوي حتى تجهز تكاملات المصادر.", uploadedOk:"تم الرفع إلى BIDSC", rulesTitle:"القواعد والاستثناءات الرئيسية", rule1:"الحد الأدنى للاكتمال للكتابة إلى BIDSC: ٩٠٪ (قابل للتعديل).", rule2:"إذا تجاوزت الاستثناءات ١٠٪ يتوقف التحديث ويُبلَّغ المحلل.", rule3:"إذا كان المصدر غير متاح، تُستخدم آخر بيانات محفوظة مع تحذير.", rule4:"إذا مرّ ٣٠+ يوماً دون رصيد، يُبلَّغ المحلل ومالك الأعمال.", rule5:"لا تعمل خطة التخصيص والتنبؤ وتتبع المستفيدين حتى تكتمل هذه الدورة.", mSar:"مليون ريال" });
@@ -1322,13 +1362,13 @@ const STATUS_OF = { act_submit:"submitted", act_approve:"approved", act_escalate
 function makeKpis(params){ const s=computeAllocation(params); const sv=scenarioSavings(s);
   return { savingsPhase:sv.phase, pctBudget:sv.pctOfBudget, fg:s.FG, hbr:s.HBR }; }
 const RAW_SEED = [
-  { id:"WO-2026-0312", title:"Q2 reallocation · Riyadh & Makkah", params:{reallocatePct:0.10,boostLowPct:0.08,offPlanPct:0.05}, affectsCap:false, status:"submitted",
+  { id:"WO-2026-0312", title:"Q2 reallocation · Riyadh & Makkah", params:{reallocatePct:0.10,boostLowPct:0.08,offPlanPct:0.05}, affectsCap:false, status:"submitted", sla:41,
     history:[{role:"analyst",action:"act_submit",ts:"03 Jun 09:12",note:""}] },
-  { id:"WO-2026-0309", title:"Off-plan restriction · national", params:{offPlanPct:0.12,capHighPct:0.10}, affectsCap:true, status:"submitted",
+  { id:"WO-2026-0309", title:"Off-plan restriction · national", params:{offPlanPct:0.12,capHighPct:0.10}, affectsCap:true, status:"submitted", sla:8,
     history:[{role:"analyst",action:"act_submit",ts:"02 Jun 14:40",note:""}] },
   { id:"WO-2026-0305", title:"Monthly support rebalancing", params:{reallocatePct:0.12,boostLowPct:0.10,offPlanPct:0.06}, affectsCap:false, status:"approved",
     history:[{role:"analyst",action:"act_submit",ts:"28 May 10:05",note:""},{role:"owner",action:"act_approve",ts:"29 May 11:20",note:"Within tactical authority"}] },
-  { id:"WO-2026-0299", title:"Support cap revision · >16k band", params:{capHighPct:0.22,reallocatePct:0.18}, affectsCap:true, status:"escalated",
+  { id:"WO-2026-0299", title:"Support cap revision · >16k band", params:{capHighPct:0.22,reallocatePct:0.18}, affectsCap:true, status:"escalated", sla:50,
     history:[{role:"analyst",action:"act_submit",ts:"24 May 08:30",note:""},{role:"owner",action:"act_escalate",ts:"25 May 09:00",note:"Affects support cap"}] },
   { id:"WO-2026-0288", title:"Phase-3 fairness uplift", params:{reallocatePct:0.25,capHighPct:0.20,boostLowPct:0.15,offPlanPct:0.10}, affectsCap:true, status:"adjudicated",
     history:[{role:"analyst",action:"act_submit",ts:"18 May 09:00",note:""},{role:"owner",action:"act_escalate",ts:"19 May 10:00",note:""},{role:"minister",action:"act_adjudicate",ts:"21 May 12:30",note:"Approved with monitoring"}] },
@@ -1357,7 +1397,7 @@ function App(){
   function addPackage(data){
     const ts=nowStr(lang);
     const id="WO-2026-0"+(400+packages.length);
-    const pkg={ id, status:"submitted",
+    const pkg={ id, status:"submitted", sla:48,
       history:[{role:"analyst",action:"act_submit",ts,note:""}], ...data };
     setPackages(prev=>[pkg,...prev]);
     pushAudit({role:"analyst",action:"act_submit",target:id,status:"submitted"});
