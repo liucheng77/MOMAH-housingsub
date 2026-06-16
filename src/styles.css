@@ -64,7 +64,7 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .topbar .brand{display:flex;align-items:center;gap:12px;font-weight:700}
 .topbar .brand .topbar-logo{height:38px;width:auto;display:block;flex:0 0 auto}
 .topbar .brand .topbar-sep{width:1px;height:30px;background:var(--line);display:inline-block}
-.topbar .brand .topbar-app{font-weight:700;font-size:14px;color:var(--ink)}
+.topbar .brand .topbar-app{font-weight:700;font-size:22px;color:var(--ink);line-height:1.1}
 .topbar .right{display:flex;align-items:center;gap:8px}
 .topbar .tbtn{background:#fff;border:1px solid var(--line);color:var(--ink);
   border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-weight:600;display:inline-flex;gap:6px;align-items:center}
@@ -235,6 +235,18 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .modal-body{padding:20px}
 .pkg-detail{margin-top:12px;padding:12px 14px;background:#f8fbf9;border:1px solid var(--line);border-radius:10px}
 .leak-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.brief-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 16px}
+.brief-card .bh{font-size:13px;font-weight:700;margin-bottom:8px}
+.brief-card .bv{font-size:21px;font-weight:800;color:var(--green-dark);line-height:1.1}
+.brief-card .bs{font-size:12px;margin-top:5px}
+.agent-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(120deg,#4f46e5 0%,#6d5ae6 45%,#2563eb 100%);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 11px;white-space:nowrap;box-shadow:0 2px 8px rgba(79,70,229,.28)}
+.agent-badge .ic-gear{filter:brightness(0) invert(1);animation:gearspin 8s linear infinite}
+@keyframes gearspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.ic-gear{width:15px;height:15px;flex:0 0 auto}
+.sect-right{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--green-100);color:var(--green-dark);font-size:11px;font-weight:800;cursor:help;background:var(--green-50);flex:0 0 auto}
+.tip .tip-pop{position:absolute;top:140%;inset-inline-start:0;width:260px;max-width:62vw;background:#16211c;color:#fff;font-size:12px;font-weight:400;line-height:1.55;padding:9px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.28);opacity:0;visibility:hidden;transition:opacity .15s;z-index:60;text-align:start}
+.tip:hover .tip-pop,.tip:focus .tip-pop{opacity:1;visibility:visible}
 .notif-badge{position:absolute;top:-5px;inset-inline-end:-5px;background:var(--danger);color:#fff;border-radius:999px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .notif-row{display:flex;gap:10px;padding:9px 8px;border-top:1px solid var(--line)}
 .notif-row:hover{background:#f8fbf9}
