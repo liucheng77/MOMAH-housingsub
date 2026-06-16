@@ -386,8 +386,8 @@ function KPI({label,value,sub,tone}){
   return (<div className={"kpi"+(tone?" kpi-"+tone:"")}><div className="label">{label}</div>
     <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub">{sub}</div>}</div>);
 }
-function Section({title,sub,right,children}){
-  return (<div className="card pad acc" style={{marginBottom:16}}>
+function Section({title,sub,right,children,className}){
+  return (<div className={"card pad acc"+(className?" "+className:"")} style={{marginBottom:16}}>
     <div className="page-h" style={{marginBottom:sub?12:8}}>
       <div><h2 style={{fontSize:16}}>{title}</h2>{sub&&<div className="sub muted">{sub}</div>}</div>{right}</div>
     {children}</div>);
@@ -555,7 +555,9 @@ function Sidebar(){
   </div>);
 }
 
-const RECO_PARAMS = { reallocatePct:0.15, capHighPct:0.12, boostLowPct:0.10, offPlanPct:0.08 };
+const RECO_PARAMS = { reallocatePct:0.20, capHighPct:0.25, boostLowPct:0.08, offPlanPct:0.10 };
+// BRD 3.5: 5-yr savings expected range 1.37B–3.4B of the 7.9B Phase-3 budget; 3.4B is the upper bound.
+const SAVINGS_CEIL = 3.4e9;
 
 function PageHeader({title,sub,right}){
   return (<div className="page-h"><div><h1>{title}</h1>{sub&&<div className="sub">{sub}</div>}</div>{right}</div>);
@@ -949,11 +951,12 @@ function OrchestrationChain({states}){
   ];
   return (<div className="chain">
     {nodes.map((nd,i)=>{ const s=states[i]||"idle";
+      const col=s==="done"?"var(--green)":s==="run"?"#6d5ae6":null;
       return (<div key={nd.k} className={"node "+(s==="run"?"run":s==="done"?"done":"")}>
-        <span className="node-dot" style={{background:s==="done"?"var(--green)":s==="run"?"var(--info)":"#cbd5d0"}}/>
-        <span style={{flex:1,fontSize:13,fontWeight:600}}>{t(nd.k)}</span>
+        <span className="node-dot" style={{background:col||"#cbd5d0"}}/>
+        <span style={{flex:1,fontSize:13,fontWeight:600,color:col||"inherit",transition:"color .3s ease"}}>{t(nd.k)}</span>
         <span className="node-metric"><span className="ml">{t(nd.labelKey)}</span> <RollingMetric active={s==="run"} target={nd.target} format={nd.fmt}/></span>
-        <span className="st" style={{color:s==="done"?"var(--green)":s==="run"?"var(--info)":"var(--muted)"}}>
+        <span className="st" style={{color:col||"var(--muted)"}}>
           {s==="run"?t("running"):s==="done"?("✓ "+t("done")):"—"}</span>
       </div>); })}
   </div>);
@@ -968,23 +971,38 @@ function WhatIf(){
   const [busy,setBusy]=useState(false);
   const [flash,setFlash]=useState(false);
   const [phase,setPhase]=useState(null);
+  const [evP,setEvP]=useState(null);      // params of the LAST run — drives the AI assessment
+  const [leverFlash,setLeverFlash]=useState(false);
   const scn=useMemo(()=>computeAllocation(p),[p]);
   const sv=scenarioSavings(scn);
   const C=RC;
-  function animateChain(then){
+  const ev=useMemo(()=>{
+    if(!evP) return {tone:"info", text:t("ai_start")};
+    const a=computeAllocation(evP), s=scenarioSavings(a);
+    const fg=a.FG, hbr=a.HBR, save=money(s.phase), pct=Math.round(s.pctOfBudget*100);
+    const fmt=(k,v)=>t(k).replace(/\{(\w+)\}/g,(_,x)=>v[x]!==undefined?v[x]:"{"+x+"}");
+    if(evP.boostLowPct>0.15 && s.pctOfBudget<0.10) return {tone:"warn", text:fmt("ai_tradeoff",{hbr:pct1(hbr),save})};
+    if(fg>=0.95 && s.pctOfBudget>=0.15) return {tone:"good", text:fmt("ai_win",{save,pct,fg:fg.toFixed(2)})};
+    if(fg<0.90) return {tone:"warn", text:fmt("ai_fairlow",{fg:fg.toFixed(2)})};
+    let txt=fmt("ai_neutral",{save,fg:fg.toFixed(2),hbr:pct1(hbr)});
+    if(evP.reallocatePct>0.2) txt+=" "+t("ai_minister");
+    return {tone:"info", text:txt};
+  },[evP,t,money]);
+  function animateChain(then,finalP){
     setBusy(true); setPhase("run");
     [0,1,2,3].forEach((i)=>{
       setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="run";return n;}); },i*450);
-      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setFlash(true); setPhase("converge"); setTimeout(()=>{setFlash(false); setPhase(null);},1300);} },i*450+380);
+      setTimeout(()=>{ setChain(c=>{const n=[...c];n[i]="done";return n;}); if(i===3){setBusy(false); then&&then(); setEvP(finalP||p); setFlash(true); setPhase("converge"); setTimeout(()=>{setFlash(false); setPhase(null);},1300);} },i*450+380);
     });
   }
-  function runSim(){ animateChain(); }
+  function runSim(){ animateChain(null,p); }
+  function applyReco(){ const next={...RECO_PARAMS}; setLeverFlash(false); animateChain(()=>{setP(next); setLeverFlash(true); setTimeout(()=>setLeverFlash(false),1100);}, next); }
   function runNL(){
     // light NL parse: first number → boost <10k; mention of cap/reduce → cap; else recommended preset
     const m=nl.match(/(\d+)\s*%?/); const num=m?clamp(parseInt(m[1])/100,0,0.45):0.10;
     const next={...RECO_PARAMS, boostLowPct:num};
     if(/cap|reduce|تقييد|خفض/i.test(nl)) next.capHighPct=0.20;
-    animateChain(()=>setP(next));
+    animateChain(()=>{setP(next); setLeverFlash(true); setTimeout(()=>setLeverFlash(false),1100);}, next);
   }
   function assemble(){
     const affectsCap = p.capHighPct>0 || p.reallocatePct>0.20;
@@ -1005,31 +1023,33 @@ function WhatIf(){
     {k:t("kpi_hbr"),b:pct1(BASELINE.HBR),a:pct1(scn.HBR),tone:"good"},
     {k:t("cmp_commit"),b:money(BASELINE.spend*15),a:money(scn.spend*15),tone:"good"},
   ];
-  const Slider=({lk,field,max})=>(<div className="field">
-    <label style={{display:"flex",justifyContent:"space-between"}}><span>{t(lk)}</span><span className="mono">{Math.round(p[field]*100)}%</span></label>
-    <input className="range" type="range" min="0" max={max} step="1" value={Math.round(p[field]*100)}
-      onChange={e=>setP({...p,[field]:parseInt(e.target.value)/100})}/></div>);
+  const leverDefs=[{lk:"lv_realloc",field:"reallocatePct",max:30},{lk:"lv_cap",field:"capHighPct",max:35},{lk:"lv_boost",field:"boostLowPct",max:45},{lk:"lv_offplan",field:"offPlanPct",max:20}];
+  const saveOver=sv.phase>SAVINGS_CEIL;
   return (<div className="fade">
     <PageHeader title={t("nav_whatif")} sub={t("whatif_sub")}/>
     <Section title={t("orchestration")} right={<AgentBadge name={t("agent_orch")}/>}>
       <div style={{display:"flex",gap:8,marginBottom:12}}>
-        <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
-        <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
+        <input className="input" style={{flex:1}} placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
+        <button className="btn btn-ai" style={{flexShrink:0,minWidth:170,justifyContent:"center",textAlign:"center",fontWeight:700}} onClick={runNL} disabled={busy}>✦ {t("askAI")}</button>
       </div>
-      {phase&&<ParticleField mode={phase}/>}
       {busy&&<div className="ai-working">✦ {t("aiWorking")}</div>}
       <OrchestrationChain states={chain}/>
     </Section>
     <div className="cols-2">
-      <Section title={t("levers")} right={<button className="btn secondary sm" onClick={runSim} disabled={busy}>{busy?t("running"):t("runWhatif")}</button>}>
-        <Slider lk="lv_realloc" field="reallocatePct" max="30"/>
-        <Slider lk="lv_cap" field="capHighPct" max="35"/>
-        <Slider lk="lv_boost" field="boostLowPct" max="45"/>
-        <Slider lk="lv_offplan" field="offPlanPct" max="20"/>
+      <Section className="lever-card" title={t("levers")} right={<button className="btn secondary sm" onClick={runSim} disabled={busy}>{busy?t("running"):t("runLevers")}</button>}>
+        {leverDefs.map(d=>(<div key={d.field} className={"field"+(leverFlash?" lever-flash":"")}>
+          <label style={{display:"flex",justifyContent:"space-between"}}><span>{t(d.lk)}</span><span className="mono">{Math.round(p[d.field]*100)}%</span></label>
+          <input className="range" type="range" min="0" max={d.max} step="1" value={Math.round(p[d.field]*100)}
+            onChange={e=>setP({...p,[d.field]:parseInt(e.target.value)/100})}/></div>))}
+        <div className={"ai-eval "+ev.tone}>
+          <div className="ai-eval-top"><span className="ai-eval-ic">✦</span><span className="ai-eval-h">{t("ai_title")}</span></div>
+          <div className="ai-eval-t" style={busy?{color:"#6d5ae6"}:undefined}>{busy?t("aiWorking"):ev.text}</div>
+          {evP&&!busy&&<button className="ai-eval-btn" onClick={applyReco}>✦ {t("applyReco")}</button>}
+        </div>
       </Section>
       <div>
         <div className={"cols-3"+(flash?" flash-kpis":"")} style={{marginBottom:16}}>
-          <KPI label={t("kpi_savings")} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
+          <KPI label={t("kpi_savings")} value={money(sv.phase)} sub={saveOver?t("save_over"):(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone={saveOver?"warn":"good"}/>
           <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
           <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
         </div>
@@ -1382,6 +1402,12 @@ Object.assign(I18N.ar,{ agent_data:"وكيل تحديث البيانات وال�
 Object.assign(I18N.en,{ cop_sumTitle:"Delivery summary", cop_sumText:"After each approval, the outputs are delivered to Housing Copilot via the API Contract (< 30s) and surfaced in its presentation layer as a strategic brief.", cop_for:"For", cop_aud:"Minister · Business Owner · strategic decision-makers", cop_i1:"Support recommendation (type + amount + rationale)", cop_i2:"Current & projected HBR", cop_i3:"Fairness Gap (multi-dimensional)", cop_i4:"What-if results", cop_note:"Read-only consumption — Copilot never executes; decisions stay human." });
 Object.assign(I18N.zh,{ cop_sumTitle:"交付摘要", cop_sumText:"每次批准后，输出通过 API 契约交付 Housing Copilot（< 30 秒），并在其展示层作为战略简报呈现。", cop_for:"供参考", cop_aud:"部长 · 业务负责人 · 战略决策层", cop_i1:"补贴推荐（类型 + 金额 + 理由）", cop_i2:"当前与预测 HBR", cop_i3:"公平性差距（多维）", cop_i4:"What-if 结果", cop_note:"只读消费 — Copilot 永不执行；决定始终在人。" });
 Object.assign(I18N.ar,{ cop_sumTitle:"ملخص التسليم", cop_sumText:"بعد كل اعتماد، تُسلَّم المخرجات إلى مساعد الإسكان عبر عقد الـ API (< ٣٠ ثانية) وتُعرض في طبقة العرض كموجز استراتيجي.", cop_for:"للاطلاع", cop_aud:"الوزير · مالك الأعمال · صنّاع القرار الاستراتيجي", cop_i1:"توصية الدعم (النوع + المبلغ + المبرر)", cop_i2:"HBR الحالي والمتوقع", cop_i3:"فجوة العدالة (متعددة الأبعاد)", cop_i4:"نتائج المحاكاة", cop_note:"استهلاك للقراءة فقط — لا ينفّذ المساعد؛ القرار يبقى بشرياً." });
+Object.assign(I18N.en,{ applyReco:"Apply AI suggestion", save_over:"⚠ Exceeds 43%" });
+Object.assign(I18N.zh,{ applyReco:"应用 AI 建议", save_over:"⚠ 超出 43%" });
+Object.assign(I18N.ar,{ applyReco:"تطبيق توصية الذكاء", save_over:"⚠ يتجاوز ٤٣٪" });
+Object.assign(I18N.en,{ askAI:"Ask AI", runLevers:"Run with current levers", ai_title:"AI assessment", ai_start:"Drag the levers or use Ask AI to start a simulation — I'll assess the trade-offs.", ai_fairlow:"Fairness Gap is still {fg} (<1.0) — the low-income segment is still under-served. I'd raise ‘Reallocate’ or ‘Boost <10k’.", ai_tradeoff:"HBR improves to {hbr} and fairness rises, but boosting low-income support eats into savings (only {save}). I'd offset with a higher cap or off-plan restriction — or accept it as a people-first trade-off.", ai_win:"Savings {save} ({pct}% of budget) with Fairness Gap {fg} — fairness and savings both improve. I'd assemble the decision package and submit.", ai_neutral:"Current scenario: savings {save}, Fairness Gap {fg}, HBR {hbr}. You can fine-tune further or submit.", ai_minister:"Reallocation exceeds 20% — this needs the Minister's adjudication." });
+Object.assign(I18N.zh,{ askAI:"Ask AI", runLevers:"按当前杠杆运行", ai_title:"AI 评估", ai_start:"拖动杠杆或用 Ask AI 开始推演 —— 我会评估其中的权衡。", ai_fairlow:"Fairness Gap 仍为 {fg}（<1.0），低收入群体仍偏少。建议提高‘再分配’或‘提升 <1万支援’。", ai_tradeoff:"HBR 降至 {hbr}、公平改善，但提升低收入支援吃掉了节省（仅 {save}）。建议适度提高封顶或限期房来对冲，或接受这是‘惠民优先’的取舍。", ai_win:"节省 {save}（占预算 {pct}%）同时 Fairness Gap 达 {fg}，公平与节流双赢，建议组装决策包并上报。", ai_neutral:"当前情景：节省 {save}、Fairness Gap {fg}、HBR {hbr}。可继续微调或上报。", ai_minister:"再分配超过 20%，按规则需上报部长裁决。" });
+Object.assign(I18N.ar,{ askAI:"Ask AI", runLevers:"التشغيل بالروافع الحالية", ai_title:"تقييم الذكاء الاصطناعي", ai_start:"حرّك الروافع أو استخدم Ask AI لبدء المحاكاة — سأقيّم المفاضلات.", ai_fairlow:"فجوة العدالة لا تزال {fg} (<١٫٠) — الشريحة منخفضة الدخل ما زالت غير مخدومة. أنصح برفع ‘إعادة التوزيع’ أو ‘رفع دعم <١٠ك’.", ai_tradeoff:"يتحسّن HBR إلى {hbr} وترتفع العدالة، لكن رفع دعم منخفضي الدخل يستهلك الوفورات (فقط {save}). أنصح بتعويض ذلك برفع التقييد، أو قبولها كمفاضلة ‘الأولوية للناس’.", ai_win:"وفورات {save} ({pct}٪ من الميزانية) مع فجوة عدالة {fg} — تتحسّن العدالة والوفورات معاً. أنصح بتجميع حزمة القرار ورفعها.", ai_neutral:"السيناريو الحالي: وفورات {save}، فجوة العدالة {fg}، HBR {hbr}. يمكنك الضبط الدقيق أو الرفع.", ai_minister:"تتجاوز إعادة التوزيع ٢٠٪ — يتطلب ذلك بتّ الوزير." });
 Object.assign(I18N.en,{ syncOk:"Daily data sync succeeded", syncFail:"Daily data sync failed", importTitle:"Import to BIDSC", dropHint:"Drag a file here, or click to choose", validating:"Validating data accuracy…", checkPass:"Validation passed — ready to import", checkFail:"Validation failed — completeness <90% or exceptions >10%", importBtn:"Import to BIDSC", fileLabel:"File" });
 Object.assign(I18N.zh,{ syncOk:"每日数据同步成功", syncFail:"每日数据同步失败", importTitle:"导入到 BIDSC", dropHint:"拖拽文件到此，或点击选择", validating:"正在校验数据准确性…", checkPass:"校验通过 — 可导入", checkFail:"校验未通过 — 完整度 <90% 或异常 >10%", importBtn:"导入到 BIDSC", fileLabel:"文件" });
 Object.assign(I18N.ar,{ syncOk:"نجحت المزامنة اليومية للبيانات", syncFail:"فشلت المزامنة اليومية للبيانات", importTitle:"استيراد إلى BIDSC", dropHint:"اسحب ملفاً هنا أو اضغط للاختيار", validating:"جارٍ التحقق من دقة البيانات…", checkPass:"اجتاز التحقق — جاهز للاستيراد", checkFail:"فشل التحقق — الاكتمال <٩٠٪ أو الاستثناءات >١٠٪", importBtn:"استيراد إلى BIDSC", fileLabel:"الملف" });
