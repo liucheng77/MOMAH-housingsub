@@ -75,7 +75,7 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .topbar .brand{display:flex;align-items:center;gap:12px;font-weight:700}
 .topbar .brand .topbar-logo{height:38px;width:auto;display:block;flex:0 0 auto}
 .topbar .brand .topbar-sep{width:1px;height:30px;background:var(--line);display:inline-block}
-.topbar .brand .topbar-app{font-weight:700;font-size:14px;color:var(--ink)}
+.topbar .brand .topbar-app{font-weight:700;font-size:22px;color:var(--ink);line-height:1.1}
 .topbar .right{display:flex;align-items:center;gap:8px}
 .topbar .tbtn{background:#fff;border:1px solid var(--line);color:var(--ink);
   border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-weight:600;display:inline-flex;gap:6px;align-items:center}
@@ -246,6 +246,18 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .modal-body{padding:20px}
 .pkg-detail{margin-top:12px;padding:12px 14px;background:#f8fbf9;border:1px solid var(--line);border-radius:10px}
 .leak-card{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.brief-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 16px}
+.brief-card .bh{font-size:13px;font-weight:700;margin-bottom:8px}
+.brief-card .bv{font-size:21px;font-weight:800;color:var(--green-dark);line-height:1.1}
+.brief-card .bs{font-size:12px;margin-top:5px}
+.agent-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(120deg,#4f46e5 0%,#6d5ae6 45%,#2563eb 100%);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 11px;white-space:nowrap;box-shadow:0 2px 8px rgba(79,70,229,.28)}
+.agent-badge .ic-gear{filter:brightness(0) invert(1);animation:gearspin 8s linear infinite}
+@keyframes gearspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.ic-gear{width:15px;height:15px;flex:0 0 auto}
+.sect-right{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--green-100);color:var(--green-dark);font-size:11px;font-weight:800;cursor:help;background:var(--green-50);flex:0 0 auto}
+.tip .tip-pop{position:absolute;top:140%;inset-inline-start:0;width:260px;max-width:62vw;background:#16211c;color:#fff;font-size:12px;font-weight:400;line-height:1.55;padding:9px 11px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.28);opacity:0;visibility:hidden;transition:opacity .15s;z-index:60;text-align:start}
+.tip:hover .tip-pop,.tip:focus .tip-pop{opacity:1;visibility:visible}
 .notif-badge{position:absolute;top:-5px;inset-inline-end:-5px;background:var(--danger);color:#fff;border-radius:999px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .notif-row{display:flex;gap:10px;padding:9px 8px;border-top:1px solid var(--line)}
 .notif-row:hover{background:#f8fbf9}
@@ -391,12 +403,12 @@ const REGIONS = [
 ];
 
 const DATA_SOURCES = [
-  { key:"sakani",  status:"ok",      quality:96, freq:"daily",     records:1402360, delta:0.4,  completeness:98, updated:"Today 06:00" },
-  { key:"redf",    status:"ok",      quality:93, freq:"daily",     records:318540,  delta:1.2,  completeness:95, updated:"Today 05:30" },
-  { key:"nhc",     status:"ok",      quality:90, freq:"weekly",    records:84210,   delta:-0.6, completeness:91, updated:"2 days ago" },
-  { key:"rega",    status:"pending", quality:88, freq:"monthly",   records:51300,   delta:0.3,  completeness:88, updated:"Last month" },
-  { key:"ncsi",    status:"delayed", quality:84, freq:"quarterly", records:540000,  delta:0.1,  completeness:86, updated:"1 quarter ago" },
-  { key:"sama",    status:"ok",      quality:95, freq:"daily",     records:1250,    delta:0.0,  completeness:99, updated:"Today 06:00" },
+  { key:"sakani",  status:"ok",      freq:"daily",     records:1402360, exc:2.1, completeness:98, updated:"Today 06:00" },
+  { key:"redf",    status:"ok",      freq:"daily",     records:318540,  exc:3.4, completeness:95, updated:"Today 05:30" },
+  { key:"nhc",     status:"ok",      freq:"weekly",    records:84210,   exc:6.2, completeness:91, updated:"2 days ago" },
+  { key:"rega",    status:"ok",      freq:"monthly",   records:51300,   exc:8.5, completeness:88, updated:"Last month" },
+  { key:"ncsi",    status:"delayed", freq:"quarterly", records:540000,  exc:9.3, completeness:86, updated:"1 quarter ago" },
+  { key:"sama",    status:"ok",      freq:"daily",     records:1250,    exc:0.4, completeness:99, updated:"Today 06:00" },
 ];
 
 /* =========================================================================
@@ -690,6 +702,9 @@ const GlobeIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" strok
 const ArrowIcon = (<svg className="ic-svg ic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6"/></svg>);
 const UserIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"/></svg>);
 const BellIcon = (<svg className="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>);
+const GearIcon = (<img className="ic-gear" src="/MOMAH-housingsub/assets/gear2.svg" alt="" onError={e=>{const im=e.currentTarget,f=im.dataset.f||"0"; if(f==="0"){im.dataset.f="1";im.src="public/assets/gear2.svg";} else if(f==="1"){im.dataset.f="2";im.src="assets/gear2.svg";} else im.style.display="none";}}/>);
+function AgentBadge({name,lvl}){ const {t}=useStore(); return (<span className="agent-badge">{GearIcon}<span>{name}{lvl?(" · "+lvl):""} · {t("agent_auto")}</span></span>); }
+function InfoTip({text}){ return (<span className="tip" tabIndex={0} aria-label="formula">?<span className="tip-pop">{text}</span></span>); }
 const SEED_NOTIFS = [{id:1,k:"ntf_sla",tone:"amber",ts:"2h ago"},{id:2,k:"ntf_leak",tone:"danger",ts:"5h ago"},{id:3,k:"ntf_budget",tone:"amber",ts:"1d ago"},{id:4,k:"ntf_sync",tone:"info",ts:"Today 06:00"}];
 function NotifBell(){
   const {t}=useStore(); const [open,setOpen]=useState(false);
@@ -911,6 +926,12 @@ function AnalystHome(){
       <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} sub={t("toTarget")} tone="warn"/>
       <KPI label={t("kpi_budget")} value={(BASELINE.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)+"%"} sub={t("baseline")} />
     </div>
+    <Section title={t("quickActions")}>
+      <div className="cols-4">
+        {quick.map(([k,ic,r])=>(<button key={k} className="role-opt" onClick={()=>setRoute(r)}>
+          <span className="av">{ic}</span><span style={{fontWeight:600}}>{t(k)}</span></button>))}
+      </div>
+    </Section>
     <Section title={t("todo")}>
       {items.map((it,i)=>(<div key={i} className="todo-row">
         <span className="av sm">{it.ic}</span>
@@ -918,12 +939,6 @@ function AnalystHome(){
         <span className={"chip "+it.chip}>{t(it.due)}</span>
         <button className="btn secondary sm" onClick={()=>setRoute(it.route)}>{t("more")} {ArrowIcon}</button>
       </div>))}
-    </Section>
-    <Section title={t("quickActions")}>
-      <div className="cols-4">
-        {quick.map(([k,ic,r])=>(<button key={k} className="role-opt" onClick={()=>setRoute(r)}>
-          <span className="av">{ic}</span><span style={{fontWeight:600}}>{t(k)}</span></button>))}
-      </div>
     </Section>
   </div>);
 }
@@ -935,7 +950,8 @@ function ParticleBurst(){
   return <span className="burst" aria-hidden="true">{parts.map((p,i)=><i key={i} style={{"--dx":p.dx+"px","--dy":p.dy+"px","--d":p.d+"s"}}/>)}</span>;
 }
 function DataReadiness(){
-  const {t,user,budget,saveBudget,lang}=useStore();
+  const {t,user,budget,saveBudget,lang,currency}=useStore();
+  const cur=currency==="symbol"?"⃁":"SAR";
   const [sources,setSources]=useState(DATA_SOURCES);
   const [running,setRunning]=useState(false); const [prog,setProg]=useState(100); const [done,setDone]=useState(true);
   const [flash,setFlash]=useState(false); const [ranOnce,setRanOnce]=useState(false);
@@ -953,9 +969,8 @@ function DataReadiness(){
         setSources(prev=>prev.map(s=>({
           ...s,
           records: s.records + Math.max(1, Math.round(s.records*(0.001+Math.random()*0.004))),
-          quality: Math.min(99, s.quality + 1 + Math.floor(Math.random()*2)),
           completeness: Math.min(99, s.completeness + 1 + Math.floor(Math.random()*2)),
-          delta: +(Math.random()*1.7 - 0.3).toFixed(1),
+          exc: +(1+Math.random()*8).toFixed(1),
           updated: s.status==="ok" ? "Just now" : s.updated,
         })));
         setExc(+(3+Math.random()*3).toFixed(1)); setSyncTime(nowStr(lang));
@@ -988,10 +1003,10 @@ function DataReadiness(){
         <div className="mini-kpi"><div className="muted" style={{fontSize:11.5}}>{t("exceptions")}</div><div className="v" style={{color:exc>10?"var(--danger)":"var(--green)"}}>{exc}%</div></div>
         {[["cash","bud_cash"],["inkind","bud_inkind"],["ceiling","bud_ceiling"]].map(([f,lk])=>(
           <div key={f} className="mini-kpi">
-            <div className="muted" style={{fontSize:11.5}}>{t(lk)}</div>
+            <div className="muted" style={{fontSize:11.5}}>{t(lk)} <span style={{opacity:.7}}>({cur} · M)</span></div>
             {user==="owner"
               ? <input className="input mono" style={{height:30,padding:"0 8px",marginTop:4,fontSize:14,width:"100%"}} type="number" value={bform[f]} onChange={e=>{setBform({...bform,[f]:e.target.value});setSaved(false);}}/>
-              : <div className="v">{budget[f]}<span className="muted" style={{fontSize:11,fontWeight:400}}> {t("mSar")}</span></div>}
+              : <div className="v">{cur} {n0(budget[f])}<span className="muted" style={{fontSize:11,fontWeight:400}}> M</span></div>}
           </div>))}
       </div>
       {user==="owner"&&<div style={{display:"flex",alignItems:"center",gap:12,marginTop:12,flexWrap:"wrap"}}>
@@ -1001,7 +1016,7 @@ function DataReadiness(){
       </div>}
       {budget.daysSince>30&&<div className="banner" style={{marginTop:12,background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("budStale")}</div>}
     </Section>
-    <Section title="BIDSC">
+    <Section title="BIDSC" right={<AgentBadge name={t("agent_data")} lvl="L1"/>}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
         <div style={{flex:1}}><Progress v={prog/100}/></div>
         <span className="chip">{running?(t("writingBidsc")+" "+prog+"%"):("✓ "+t("bidscDone"))}</span>
@@ -1017,25 +1032,24 @@ function DataReadiness(){
     </div>}
     <div className={"cols-3"+(flash?" flash-sources":"")}>
       {sources.map(s=>{
-        const tone=s.status==="ok"?"var(--green)":s.status==="pending"?"var(--amber)":"var(--danger)";
-        const dCol=s.delta>0?"var(--green)":s.delta<0?"var(--danger)":"var(--muted)";
-        const dStr=(s.delta>0?"▲ +":s.delta<0?"▼ ":"– ")+Math.abs(s.delta)+"%";
+        const tone=s.status==="ok"?"var(--green)":"var(--amber)";
+        const excHigh=s.exc>10; const excCol=excHigh?"var(--danger)":"var(--green)";
         return (<div key={s.key} className="card pad">
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
             <strong>{t("src_"+s.key)}</strong>
             <span className="chip" style={{background:tone+"22",color:tone}}>● {statusToText(t,s.status)}</span></div>
           <div className="kv">
-            <div className="kv-row"><span className="muted">{t("records")}</span>
-              <span><span className="mono">{n0(s.records)}</span> <span className="mono" style={{color:dCol,fontSize:11}}>{dStr}</span> <span className="muted" style={{fontSize:11}}>{t("vsPrev")}</span></span></div>
+            <div className="kv-row"><span className="muted">{t("records")}</span><span className="mono">{n0(s.records)}</span></div>
             <div className="kv-row"><span className="muted">{t("freq")}</span><span>{s.freq}</span></div>
             <div className="kv-row"><span className="muted">{t("lastUpdate")}</span><span>{s.updated}</span></div>
           </div>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:12,margin:"10px 0 4px"}}>
-            <span className="muted">{t("quality")}</span><span className="mono">{s.quality}%</span></div>
-          <Progress v={s.quality/100} color={tone}/>
-          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,margin:"8px 0 4px"}}>
             <span className="muted">{t("completeness")}</span><span className="mono">{s.completeness}%</span></div>
           <Progress v={s.completeness/100} color="var(--info)"/>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:12,margin:"8px 0 4px"}}>
+            <span className="muted">{t("exceptions")} <span style={{opacity:.7}}>(≤ 10%)</span></span><span className="mono" style={{color:excCol,fontWeight:700}}>{s.exc}%</span></div>
+          <Progress v={Math.min(1,s.exc/15)} color={excCol}/>
+          {excHigh&&<div className="muted" style={{fontSize:11,marginTop:6,color:"var(--danger)"}}>⚠ {t("qExc")}</div>}
         </div>);
       })}
     </div>
@@ -1103,7 +1117,7 @@ function Allocation(){
         : a.status==="rejected"?<span className="chip danger">✕ {t("allocStatus_rejected")}</span>
         : <div className="muted" style={{fontSize:13}}>{t("notSubmittedYet")}</div>)}
     </Section>
-    <Section title={t("monthlyCycle")} right={<span className="chip">{t("kpi_budget")}: {(data.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)}%</span>}>
+    <Section title={<span className="sect-right">{t("monthlyCycle")}<InfoTip text={t("fml_alloc")}/></span>} right={<span className="sect-right"><span className="chip">{t("kpi_budget")}: {(data.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)}%</span><AgentBadge name={t("agent_alloc")} lvl="L2"/></span>}>
       <div className="scrollx"><table className="tbl">
         <thead><tr><th>{t("incomeBand")}</th><th className="right-num">{t("contracts")}</th><th className="right-num">{t("subsidy")}</th><th className="right-num">{t("share")}</th><th></th></tr></thead>
         <tbody>{data.rows.map((r,i)=>(<React.Fragment key={r.key}>
@@ -1142,7 +1156,7 @@ function ForecastFairness(){
       </div>
       <span className="alert-pill">{t("alert")}</span>
     </div>}
-    <Section title={t("spendForecast")}>
+    <Section title={<span className="sect-right">{t("spendForecast")}<InfoTip text={t("fml_forecast")}/></span>} right={<AgentBadge name={t("agent_forecast")} lvl="L2"/>}>
       <div style={{width:"100%",height:260}}>
         {!ok? noChart :
         <C.ResponsiveContainer>
@@ -1157,7 +1171,7 @@ function ForecastFairness(){
         </C.ResponsiveContainer>}
       </div>
     </Section>
-    <Section title={t("fairnessByRegion")}>
+    <Section title={<span className="sect-right">{t("fairnessByRegion")}<InfoTip text={t("fml_fg")}/></span>} right={<AgentBadge name={t("agent_fair")} lvl="L3"/>}>
       <div style={{width:"100%",height:300}}>
         {!ok? noChart :
         <C.ResponsiveContainer>
@@ -1174,7 +1188,7 @@ function ForecastFairness(){
         </C.ResponsiveContainer>}
       </div>
     </Section>
-    <Section title={t("leakage")} sub={t("leak_routeHint")}>
+    <Section title={t("leakage")} sub={t("leak_routeHint")} right={<AgentBadge name={t("agent_fair")} lvl="L3"/>}>
       {leaks.map(l=>{
         const big=l.cases>100;
         const canA=user==="analyst"&&l.status==="detected";
@@ -1339,7 +1353,7 @@ function WhatIf(){
       onChange={e=>setP({...p,[field]:parseInt(e.target.value)/100})}/></div>);
   return (<div className="fade">
     <PageHeader title={t("nav_whatif")} sub={t("whatif_sub")}/>
-    <Section title={t("orchestration")}>
+    <Section title={t("orchestration")} right={<AgentBadge name={t("agent_orch")}/>}>
       <div style={{display:"flex",gap:8,marginBottom:12}}>
         <input className="input" placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
         <button className="btn" onClick={runNL} disabled={busy}>✦ {t("run")}</button>
@@ -1361,7 +1375,7 @@ function WhatIf(){
           <KPI label={t("kpi_fairness")} value={scn.FG.toFixed(2)} sub={t("fair_if")} tone={scn.FG>=1?"good":"warn"}/>
           <KPI label={t("kpi_hbr")} value={pct1(scn.HBR)} sub={t("toTarget")} tone="good"/>
         </div>
-        <Section title={t("compare")} sub={t("compareNote")}>
+        <Section title={<span className="sect-right">{t("compare")}<InfoTip text={t("fml_savings")}/></span>} sub={t("compareNote")}>
           <table className="tbl"><thead><tr><th></th><th className="right-num">{t("current")}</th><th className="right-num">{t("scenario")}</th></tr></thead>
             <tbody>{cmp.map((r,i)=>(<tr key={i}><td>{r.k}</td><td className="right-num mono muted">{r.b}</td>
               <td className="right-num mono" style={{fontWeight:700,color:r.tone==="good"?"var(--green)":"var(--amber)"}}>{r.a}</td></tr>))}</tbody></table>
@@ -1392,7 +1406,7 @@ function PackageCard({pkg}){
   const canOwner = user==="owner" && pkg.status==="submitted";
   const canMin = user==="minister" && pkg.status==="escalated";
   const levers=leverSummary(t,pkg.params||{});
-  return (<div className="card pad" style={{marginBottom:14}}>
+  return (<div className="card pad acc" style={{marginBottom:14}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12}}>
       <div>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
@@ -1448,7 +1462,7 @@ function DecisionPackages({filter}){
   const {t,packages}=useStore();
   const list=packages.filter(filter||(()=>true));
   return (<div className="fade">
-    <PageHeader title={t("nav_packages")} sub={t("pkg_sub")}/>
+    <PageHeader title={t("nav_packages")} sub={t("pkg_sub")} right={<AgentBadge name={t("agent_route")} lvl="L3"/>}/>
     {list.length===0? <div className="card pad muted">{t("noItems")}</div>
       : list.map(p=><PackageCard key={p.id} pkg={p}/>)}
   </div>);
@@ -1563,12 +1577,31 @@ function AuditTrailPage(){
 
 /* ---- Copilot handoff ---- */
 function CopilotHandoff(){
-  const {t,audit}=useStore();
+  const {t,audit}=useStore(); const {money}=useMoney();
   const [sent,setSent]=useState(false);
   function deliver(){ setSent(true); setTimeout(()=>{ window.open("http://momah.test.hyrhui.com","_blank"); },700); }
+  const recoSave=scenarioSavings(computeAllocation(RECO_PARAMS)).phase;
   return (<div className="fade">
     <PageHeader title={t("nav_copilot")} sub={t("copilot_sub")}/>
-    <Section title="API Contract → Housing Copilot">
+    <Section title={t("cop_sumTitle")}>
+      <div className="cols-2">
+        <div className="brief-card"><div className="bh">📄 {t("cop_i1")}</div>
+          <div className="bv">Package + Monthly</div>
+          <div className="bs muted">5 support types · with rationale</div></div>
+        <div className="brief-card"><div className="bh">📉 {t("cop_i2")}</div>
+          <div className="bv">{pct1(BASELINE.HBR)} <span style={{color:"var(--muted)"}}>→</span> 33%</div>
+          <div className="bs muted">{t("toTarget")}</div></div>
+        <div className="brief-card"><div className="bh">⚖ {t("cop_i3")}</div>
+          <div className="bv">{BASELINE.FG.toFixed(2)} <span style={{color:"var(--muted)"}}>→</span> ≥ 1.0</div>
+          <div className="bs muted">multi-dimensional</div></div>
+        <div className="brief-card"><div className="bh">✦ {t("cop_i4")}</div>
+          <div className="bv">{money(recoSave)}</div>
+          <div className="bs muted">latest scenario savings (5-yr)</div></div>
+      </div>
+      <div className="muted" style={{fontSize:12.5,marginTop:14}}><b>{t("cop_for")}:</b> {t("cop_aud")}</div>
+      <div className="banner" style={{marginTop:10}}>● {t("cop_note")}</div>
+    </Section>
+    <Section title="API Contract → Housing Copilot" right={<AgentBadge name={t("agent_route")} lvl="L3"/>}>
       <div className="muted" style={{marginBottom:12}}>{t("deliveredItems")} · response &lt; 30s</div>
       <button className="btn" onClick={deliver}>{sent?("… "+t("opening")):("🤝 "+t("deliver"))}</button>
       <div className="banner" style={{marginTop:14}}>● {t("redline")}</div>
@@ -1664,6 +1697,33 @@ Object.assign(I18N.ar,{ ff_how:"آلية العمل · الأدوار والبي
 Object.assign(I18N.en,{ leak_report:"Report", leak_cases:"cases", leak_big:"Large-scale (>100 cases) — must escalate to the Minister", leak_routeHint:"Confirmed leak → Business Owner within 24h · >100 cases → Minister within 4h · Support is never auto-suspended.", leakSev_danger:"Confirmed", leakSev_amber:"Likely", leakSev_info:"Warning", leakStatus_detected:"Detected", leakStatus_submitted:"Awaiting Business Owner", leakStatus_adopted:"Action adopted", leakStatus_escalated:"Awaiting Minister", leakStatus_adjudicated:"Adjudicated", leakStatus_rejected:"Dismissed" });
 Object.assign(I18N.zh,{ leak_report:"上报", leak_cases:"案例", leak_big:"大规模（>100 案例）— 必须上报部长", leak_routeHint:"确认漏损 → 业务负责人 24 小时内 · >100 案例 → 部长 4 小时内 · 绝不自动停补。", leakSev_danger:"确认", leakSev_amber:"疑似", leakSev_info:"警示", leakStatus_detected:"已检测", leakStatus_submitted:"待业务负责人", leakStatus_adopted:"已采纳处置", leakStatus_escalated:"待部长", leakStatus_adjudicated:"已裁决", leakStatus_rejected:"已驳回" });
 Object.assign(I18N.ar,{ leak_report:"رفع", leak_cases:"حالات", leak_big:"واسع النطاق (>١٠٠ حالة) — يجب الرفع للوزير", leak_routeHint:"تسرب مؤكد ← مالك الأعمال خلال ٢٤ ساعة · >١٠٠ حالة ← الوزير خلال ٤ ساعات · لا يُوقف الدعم آلياً.", leakSev_danger:"مؤكد", leakSev_amber:"محتمل", leakSev_info:"تحذير", leakStatus_detected:"تم الكشف", leakStatus_submitted:"بانتظار مالك الأعمال", leakStatus_adopted:"تم اعتماد الإجراء", leakStatus_escalated:"بانتظار الوزير", leakStatus_adjudicated:"تم البتّ", leakStatus_rejected:"مرفوض" });
+Object.assign(I18N.en,{ agent_auto:"auto", agent_forecast:"Forecasting & Flagging agent", agent_fair:"Fairness & Leakage agent" });
+Object.assign(I18N.zh,{ agent_auto:"自动", agent_forecast:"支出预测与预警 agent", agent_fair:"公平与漏损监测 agent" });
+Object.assign(I18N.ar,{ agent_auto:"آلي", agent_forecast:"وكيل التنبؤ والتنبيه", agent_fair:"وكيل العدالة والتسرب" });
+Object.assign(I18N.en,{ agent_data:"Data & Budget Update agent", agent_alloc:"Subsidy Optimization agent", agent_route:"Decision Routing agent", agent_orch:"Multi-agent orchestration",
+  fml_fg:"Fairness Gap = (subsidy share to <10k) ÷ (population share of <10k). Fair when ≥ 1.0.",
+  fml_hbr:"HBR = monthly housing cost (installment + upkeep) ÷ net monthly income. Target 30–35% by 2030.",
+  fml_forecast:"12-month spend via OLS price-elasticity model (2017–2025 data). Early alert at 70% of the monthly ceiling.",
+  fml_savings:"Savings = current-matrix spend − scenario spend, over the 5-year phase.",
+  fml_commit:"Commitments to 2050 = projected total support outlay across the remaining phase.",
+  fml_alloc:"Per band: max housing cost = disposable income × deduction rate (40% for >5k); monthly support = actual − optimal interest." });
+Object.assign(I18N.zh,{ agent_data:"数据与预算更新 agent", agent_alloc:"补贴优化 agent", agent_route:"决策路由 agent", agent_orch:"多智能体编排",
+  fml_fg:"公平性差距 =（<1万群体获得的支援占比）÷（<1万群体的人口占比）。≥ 1.0 视为公平。",
+  fml_hbr:"HBR = 月度住房成本（月供 + 维护）÷ 净月收入。2030 目标 30–35%。",
+  fml_forecast:"用 OLS 价格弹性模型（2017–2025 数据）预测 12 个月支出；累计达月度上限 70% 时预警。",
+  fml_savings:"节省 = 当前矩阵支出 − 情景支出，按 5 年阶段计。",
+  fml_commit:"至 2050 承诺 = 剩余阶段内预计的支援支出总额。",
+  fml_alloc:"按收入档：最高住房成本 = 可支配收入 × 扣除率（>5千为 40%）；月度支援 = 实际利率 − 最优利率。" });
+Object.assign(I18N.ar,{ agent_data:"وكيل تحديث البيانات والميزانية", agent_alloc:"وكيل تحسين الدعم", agent_route:"وكيل توجيه القرار", agent_orch:"تنسيق متعدد الوكلاء",
+  fml_fg:"فجوة العدالة = (حصة الدعم لأقل من ١٠ك) ÷ (حصة سكان أقل من ١٠ك). عادلة عند ≥ ١٫٠.",
+  fml_hbr:"HBR = تكلفة السكن الشهرية (القسط + الصيانة) ÷ صافي الدخل الشهري. المستهدف ٣٠–٣٥٪ بحلول ٢٠٣٠.",
+  fml_forecast:"تنبؤ إنفاق ١٢ شهراً عبر نموذج OLS لمرونة السعر (بيانات ٢٠١٧–٢٠٢٥)؛ تنبيه مبكر عند ٧٠٪ من السقف الشهري.",
+  fml_savings:"الوفورات = إنفاق المصفوفة الحالية − إنفاق السيناريو، على مدى ٥ سنوات.",
+  fml_commit:"الالتزامات حتى ٢٠٥٠ = إجمالي إنفاق الدعم المتوقع للفترة المتبقية.",
+  fml_alloc:"لكل شريحة: أقصى تكلفة سكن = الدخل المتاح × نسبة الخصم (٤٠٪ لأكثر من ٥ك)؛ الدعم الشهري = الفائدة الفعلية − المثلى." });
+Object.assign(I18N.en,{ cop_sumTitle:"Delivery summary", cop_sumText:"After each approval, the outputs are delivered to Housing Copilot via the API Contract (< 30s) and surfaced in its presentation layer as a strategic brief.", cop_for:"For", cop_aud:"Minister · Business Owner · strategic decision-makers", cop_i1:"Support recommendation (type + amount + rationale)", cop_i2:"Current & projected HBR", cop_i3:"Fairness Gap (multi-dimensional)", cop_i4:"What-if results", cop_note:"Read-only consumption — Copilot never executes; decisions stay human." });
+Object.assign(I18N.zh,{ cop_sumTitle:"交付摘要", cop_sumText:"每次批准后，输出通过 API 契约交付 Housing Copilot（< 30 秒），并在其展示层作为战略简报呈现。", cop_for:"供参考", cop_aud:"部长 · 业务负责人 · 战略决策层", cop_i1:"补贴推荐（类型 + 金额 + 理由）", cop_i2:"当前与预测 HBR", cop_i3:"公平性差距（多维）", cop_i4:"What-if 结果", cop_note:"只读消费 — Copilot 永不执行；决定始终在人。" });
+Object.assign(I18N.ar,{ cop_sumTitle:"ملخص التسليم", cop_sumText:"بعد كل اعتماد، تُسلَّم المخرجات إلى مساعد الإسكان عبر عقد الـ API (< ٣٠ ثانية) وتُعرض في طبقة العرض كموجز استراتيجي.", cop_for:"للاطلاع", cop_aud:"الوزير · مالك الأعمال · صنّاع القرار الاستراتيجي", cop_i1:"توصية الدعم (النوع + المبلغ + المبرر)", cop_i2:"HBR الحالي والمتوقع", cop_i3:"فجوة العدالة (متعددة الأبعاد)", cop_i4:"نتائج المحاكاة", cop_note:"استهلاك للقراءة فقط — لا ينفّذ المساعد؛ القرار يبقى بشرياً." });
 Object.assign(I18N.en,{ syncOk:"Daily data sync succeeded", syncFail:"Daily data sync failed", importTitle:"Import to BIDSC", dropHint:"Drag a file here, or click to choose", validating:"Validating data accuracy…", checkPass:"Validation passed — ready to import", checkFail:"Validation failed — completeness <90% or exceptions >10%", importBtn:"Import to BIDSC", fileLabel:"File" });
 Object.assign(I18N.zh,{ syncOk:"每日数据同步成功", syncFail:"每日数据同步失败", importTitle:"导入到 BIDSC", dropHint:"拖拽文件到此，或点击选择", validating:"正在校验数据准确性…", checkPass:"校验通过 — 可导入", checkFail:"校验未通过 — 完整度 <90% 或异常 >10%", importBtn:"导入到 BIDSC", fileLabel:"文件" });
 Object.assign(I18N.ar,{ syncOk:"نجحت المزامنة اليومية للبيانات", syncFail:"فشلت المزامنة اليومية للبيانات", importTitle:"استيراد إلى BIDSC", dropHint:"اسحب ملفاً هنا أو اضغط للاختيار", validating:"جارٍ التحقق من دقة البيانات…", checkPass:"اجتاز التحقق — جاهز للاستيراد", checkFail:"فشل التحقق — الاكتمال <٩٠٪ أو الاستثناءات >١٠٪", importBtn:"استيراد إلى BIDSC", fileLabel:"الملف" });
