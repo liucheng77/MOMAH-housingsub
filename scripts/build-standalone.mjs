@@ -40,9 +40,24 @@ ${css}
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
 <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script type="text/babel" data-presets="react">
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<!-- Source held as text/plain so Babel does NOT auto-transform it. Babel's auto-transform now
+     defaults to the automatic JSX runtime, which injects an ES \`import "react/jsx-runtime"\` and
+     breaks in a classic <script>. We transform manually below, forcing the classic runtime. -->
+<script id="app-src" type="text/plain">
 ${code}
+</script>
+<script>
+(function(){
+  try{
+    var src=document.getElementById("app-src").textContent;
+    var out=Babel.transform(src,{presets:[["react",{runtime:"classic"}]],filename:"app.jsx"}).code;
+    (0,eval)(out);
+  }catch(e){
+    document.getElementById("root").innerHTML='<pre style="padding:24px;color:#b42318;font:13px/1.5 monospace;white-space:pre-wrap">Failed to start demo:\\n'+(e&&e.message||e)+'</pre>';
+    throw e;
+  }
+})();
 </script>
 </body>
 </html>
