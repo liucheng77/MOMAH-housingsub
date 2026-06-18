@@ -190,6 +190,14 @@ table.tbl tbody tr:hover{background:#f8fbf9}
 .ai-eval-t{font-size:14.5px;line-height:1.7;color:#5a4ad1;font-weight:700}
 .ai-eval.good .ai-eval-t{color:var(--green-dark)}
 .ai-eval.warn .ai-eval-t{color:#9a6a06}
+.dr-funnel{display:flex;flex-direction:column;align-items:center;margin:0 0 8px}
+.dr-funnel-svg{display:block}
+.fnl-arrow{animation:fnlPulse 1.6s ease-in-out infinite}
+@keyframes fnlPulse{0%,100%{opacity:.7}50%{opacity:1}}
+.dr-funnel-cap{font-size:11.5px;font-weight:700;color:var(--green-dark);margin-top:1px;letter-spacing:.01em}
+.src-group{border:1px solid var(--green-100);border-radius:14px;padding:14px;background:linear-gradient(180deg,#f7fbf9,#f3f9f5)}
+.src-group-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.src-group-head strong{font-size:14px}
 .btn-ai{background:linear-gradient(125deg,#4f46e5,#2563eb);border-color:transparent;color:#fff}
 .btn-ai:hover{background:linear-gradient(125deg,#4f46e5,#2563eb);filter:brightness(1.08)}
 .lever-card{display:flex;flex-direction:column}

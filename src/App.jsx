@@ -535,9 +535,9 @@ function TopBar(){
 }
 
 const NAV = {
-  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_forecast","📈"],["nav_whatif","✦"],["nav_packages","📦"],["nav_audit","🕓"],["nav_copilot","🤝"]],
-  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_forecast","📈"],["nav_audit","🕓"]],
-  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_audit","🕓"]],
+  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_mortgage","🏦"],["nav_forecast","📈"],["nav_referrals","👥"],["nav_impact","🔎"],["nav_whatif","✦"],["nav_packages","📦"],["nav_inventory","🏘"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_copilot","🤝"]],
+  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
+  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
 };
 function Sidebar(){
   const {t,user,route,setRoute,packages}=useStore();
@@ -690,7 +690,19 @@ function DataReadiness(){
         </div>))}
       </div>
     </div>}
-    <div className={"cols-3"+(flash?" flash-sources":"")}>
+    <div className="dr-funnel" aria-hidden="true">
+      <svg className="dr-funnel-svg" viewBox="0 0 200 56" width="160" height="44">
+        <defs><linearGradient id="fnlG" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="var(--green)" stopOpacity="0.10"/><stop offset="100%" stopColor="var(--green)" stopOpacity="0.34"/>
+        </linearGradient></defs>
+        <path d="M20 54 L180 54 L116 26 L84 26 Z" fill="url(#fnlG)" stroke="var(--green)" strokeOpacity="0.22"/>
+        <path className="fnl-arrow" d="M72 28 L100 4 L128 28 Z" fill="var(--green)"/>
+      </svg>
+      <span className="dr-funnel-cap">{t("srcFlowCap")}</span>
+    </div>
+    <div className="src-group">
+      <div className="src-group-head"><strong>{t("srcGroup")}</strong><span className="chip">● {sources.length} {t("connected")}</span></div>
+      <div className={"cols-3"+(flash?" flash-sources":"")}>
       {sources.map(s=>{
         const tone=s.status==="ok"?"var(--green)":"var(--amber)";
         const excHigh=s.exc>10; const excCol=excHigh?"var(--danger)":"var(--green)";
@@ -712,6 +724,7 @@ function DataReadiness(){
           {excHigh&&<div className="muted" style={{fontSize:11,marginTop:6,color:"var(--danger)"}}>⚠ {t("qExc")}</div>}
         </div>);
       })}
+      </div>
     </div>
     {showUp&&<Modal title={t("importTitle")} onClose={()=>{setShowUp(false);setFile(null);setChk(null);}}>
       <div className={"dropzone"+(over?" over":"")}
@@ -1261,7 +1274,7 @@ function CopilotHandoff(){
   const recoSave=scenarioSavings(computeAllocation(RECO_PARAMS)).phase;
   return (<div className="fade">
     <PageHeader title={t("nav_copilot")} sub={t("copilot_sub")}/>
-    <Section title={t("cop_sumTitle")}>
+    <Section title={t("cop_sumTitle")} right={<AgentBadge name={t("agent_route")} lvl="L3"/>}>
       <div className="cols-2">
         <div className="brief-card"><div className="bh">📄 {t("cop_i1")}</div>
           <div className="bv">Package + Monthly</div>
@@ -1279,7 +1292,7 @@ function CopilotHandoff(){
       <div className="muted" style={{fontSize:12.5,marginTop:14}}><b>{t("cop_for")}:</b> {t("cop_aud")}</div>
       <div className="banner" style={{marginTop:10}}>● {t("cop_note")}</div>
     </Section>
-    <Section title="API Contract → Housing Copilot" right={<AgentBadge name={t("agent_route")} lvl="L3"/>}>
+    <Section title="API Contract → Housing Copilot" right={<span className="chip">🤝 {t("manualPush")}</span>}>
       <div className="muted" style={{marginBottom:12}}>{t("deliveredItems")} · response &lt; 30s</div>
       <button className="btn" onClick={deliver}>{sent?("… "+t("opening")):("🤝 "+t("deliver"))}</button>
       <div className="banner" style={{marginTop:14}}>● {t("redline")}</div>
@@ -1375,9 +1388,9 @@ Object.assign(I18N.ar,{ ff_how:"آلية العمل · الأدوار والبي
 Object.assign(I18N.en,{ leak_report:"Report", leak_cases:"cases", leak_big:"Large-scale (>100 cases) — must escalate to the Minister", leak_routeHint:"Confirmed leak → Business Owner within 24h · >100 cases → Minister within 4h · Support is never auto-suspended.", leakSev_danger:"Confirmed", leakSev_amber:"Likely", leakSev_info:"Warning", leakStatus_detected:"Detected", leakStatus_submitted:"Awaiting Business Owner", leakStatus_adopted:"Action adopted", leakStatus_escalated:"Awaiting Minister", leakStatus_adjudicated:"Adjudicated", leakStatus_rejected:"Dismissed" });
 Object.assign(I18N.zh,{ leak_report:"上报", leak_cases:"案例", leak_big:"大规模（>100 案例）— 必须上报部长", leak_routeHint:"确认漏损 → 业务负责人 24 小时内 · >100 案例 → 部长 4 小时内 · 绝不自动停补。", leakSev_danger:"确认", leakSev_amber:"疑似", leakSev_info:"警示", leakStatus_detected:"已检测", leakStatus_submitted:"待业务负责人", leakStatus_adopted:"已采纳处置", leakStatus_escalated:"待部长", leakStatus_adjudicated:"已裁决", leakStatus_rejected:"已驳回" });
 Object.assign(I18N.ar,{ leak_report:"رفع", leak_cases:"حالات", leak_big:"واسع النطاق (>١٠٠ حالة) — يجب الرفع للوزير", leak_routeHint:"تسرب مؤكد ← مالك الأعمال خلال ٢٤ ساعة · >١٠٠ حالة ← الوزير خلال ٤ ساعات · لا يُوقف الدعم آلياً.", leakSev_danger:"مؤكد", leakSev_amber:"محتمل", leakSev_info:"تحذير", leakStatus_detected:"تم الكشف", leakStatus_submitted:"بانتظار مالك الأعمال", leakStatus_adopted:"تم اعتماد الإجراء", leakStatus_escalated:"بانتظار الوزير", leakStatus_adjudicated:"تم البتّ", leakStatus_rejected:"مرفوض" });
-Object.assign(I18N.en,{ agent_auto:"auto", agent_forecast:"Forecasting & Flagging agent", agent_fair:"Fairness & Leakage agent" });
-Object.assign(I18N.zh,{ agent_auto:"自动", agent_forecast:"支出预测与预警 agent", agent_fair:"公平与漏损监测 agent" });
-Object.assign(I18N.ar,{ agent_auto:"آلي", agent_forecast:"وكيل التنبؤ والتنبيه", agent_fair:"وكيل العدالة والتسرب" });
+Object.assign(I18N.en,{ agent_auto:"auto", agent_forecast:"Forecasting & Flagging agent", agent_fair:"Fairness & Leakage agent", manualPush:"Manual push", srcGroup:"Source systems", connected:"connected", srcFlowCap:"ingested & validated → BIDSC" });
+Object.assign(I18N.zh,{ agent_auto:"自动", agent_forecast:"支出预测与预警 agent", agent_fair:"公平与漏损监测 agent", manualPush:"手动推送", srcGroup:"源系统", connected:"已连接", srcFlowCap:"汇聚并校验 → BIDSC" });
+Object.assign(I18N.ar,{ agent_auto:"آلي", agent_forecast:"وكيل التنبؤ والتنبيه", agent_fair:"وكيل العدالة والتسرب", manualPush:"دفع يدوي", srcGroup:"الأنظمة المصدر", connected:"متصل", srcFlowCap:"يُجمع ويُتحقق منه ← BIDSC" });
 Object.assign(I18N.en,{ agent_data:"Data & Budget Update agent", agent_alloc:"Subsidy Optimization agent", agent_route:"Decision Routing agent", agent_orch:"Multi-agent orchestration",
   fml_fg:"Fairness Gap = (subsidy share to <10k) ÷ (population share of <10k). Fair when ≥ 1.0.",
   fml_hbr:"HBR = monthly housing cost (installment + upkeep) ÷ net monthly income. Target 30–35% by 2030.",
@@ -1452,6 +1465,336 @@ const RAW_SEED = [
 function seedPackages(){ return RAW_SEED.map(p=>({ ...p, params:{...p.params}, history:p.history.map(h=>({...h})), kpis:makeKpis(p.params) })); }
 function seedAudit(){ const out=[]; RAW_SEED.forEach(p=>p.history.forEach(h=>out.push({ role:h.role, action:h.action, target:p.id, status:STATUS_OF[h.action], ts:h.ts, note:h.note }))); return out.reverse(); }
 
+/* ===== UC-05 Beneficiary Status Tracking (referral list) ===== */
+const REFERRALS=[
+  {id:"BEN****21",region:"Asir",band:"band_urgent",cur:36,start:52,source:"bt_gosi",months:3,status:"new"},
+  {id:"BEN****08",region:"Riyadh",band:"band_low",cur:38,start:49,source:"bt_both",months:2,status:"monitoring"},
+  {id:"BEN****55",region:"Makkah",band:"band_urgent",cur:33,start:47,source:"bt_housing",months:3,status:"new"},
+  {id:"BEN****32",region:"Eastern",band:"band_low",cur:37,start:55,source:"bt_gosi",months:2,status:"monitoring"},
+  {id:"BEN****19",region:"Qassim",band:"band_mid",cur:34,start:41,source:"bt_housing",months:3,status:"new"},
+  {id:"BEN****77",region:"Madinah",band:"band_low",cur:35,start:46,source:"bt_both",months:3,status:"approved"},
+];
+function MiniTrend({start,cur}){
+  const a=start,b=cur,m1=a-(a-b)*0.45,m2=a-(a-b)*0.75; const pts=[a,m1,m2,b];
+  const mx=Math.max(...pts)+1,mn=Math.min(...pts)-2,W=280,H=72,step=W/(pts.length-1);
+  const xy=pts.map((v,i)=>[i*step, H-((v-mn)/(mx-mn))*H]);
+  const d=xy.map((p,i)=>(i?"L":"M")+p[0].toFixed(0)+" "+p[1].toFixed(0)).join(" ");
+  return (<svg width={W} height={H} style={{display:"block",margin:"4px 0"}}>
+    <path d={d} fill="none" stroke="var(--green)" strokeWidth="2.5"/>
+    {xy.map((p,i)=><circle key={i} cx={p[0]} cy={p[1]} r="3.5" fill={i===xy.length-1?"var(--green)":"#9bc7b0"}/>)}
+  </svg>);
+}
+function BeneficiaryTracking(){
+  const {t}=useStore();
+  const [list,setList]=useState(REFERRALS);
+  const [busy,setBusy]=useState(false); const [sel,setSel]=useState(null);
+  function runDetect(){ setBusy(true); setTimeout(()=>{
+    setList(prev=>prev.map(b=>b.status==="monitoring"&&b.months<3?{...b,months:b.months+1}:b)
+      .map(b=>b.status==="monitoring"&&b.months>=3?{...b,status:"new"}:b)); setBusy(false); },900); }
+  function act(id,kind){ setList(prev=>prev.map(b=>b.id===id?{...b,status:kind==="refer"?"referred":"monitoring"}:b)); setSel(null); }
+  const cnt=k=>list.filter(b=>b.status===k).length;
+  const btChip=(s)=>{ const m={new:["bt_new",""],monitoring:["bt_review","info"],referred:["bt_referred","amber"],approved:["bt_approved",""]}; const [k,c]=m[s]; return <span className={"chip "+c}>{t(k)}</span>; };
+  return (<div className="fade">
+    <PageHeader title={t("nav_referrals")} sub={t("bt_sub")} right={<span className="sect-right">
+      <button className="btn secondary sm" onClick={runDetect} disabled={busy}>{busy?t("running"):("⟳ "+t("bt_run"))}</button>
+      <AgentBadge name={t("agent_track")} lvl="L1"/></span>}/>
+    <div className="banner" style={{marginBottom:14}}>● {t("bt_redline")}</div>
+    <div className="dr-strip" style={{marginBottom:14}}>
+      {[["bt_new","new"],["bt_review","monitoring"],["bt_referred","referred"],["bt_approved","approved"]].map(([lk,k])=>(
+        <div key={k} className="mini-kpi"><div className="muted" style={{fontSize:11.5}}>{t(lk)}</div><div className="v">{cnt(k)}</div></div>))}
+    </div>
+    <Section title={t("nav_referrals")} sub={t("bt_rule")}>
+      <table className="tbl"><thead><tr>
+        <th>{t("bt_id")}</th><th>{t("bt_region")}</th><th>{t("bt_band")}</th>
+        <th className="right-num">{t("bt_curHBR")}</th><th className="right-num">{t("bt_startHBR")}</th>
+        <th>{t("bt_source")}</th><th className="right-num">{t("bt_months")}</th><th>{t("bt_status")}</th><th></th></tr></thead>
+        <tbody>{list.map(b=>(<tr key={b.id}>
+          <td className="mono">{b.id}</td><td>{b.region}</td><td>{t(b.band)}</td>
+          <td className="right-num mono" style={{color:"var(--green)",fontWeight:700}}>{b.cur}%</td>
+          <td className="right-num mono muted">{b.start}%</td>
+          <td>{t(b.source)}</td><td className="right-num mono">{b.months}/3</td>
+          <td>{btChip(b.status)}</td>
+          <td>{(b.status==="new"||b.status==="monitoring")&&<button className="btn ghost sm" onClick={()=>setSel(b)}>{t("bt_reviewBtn")}</button>}</td>
+        </tr>))}</tbody></table>
+    </Section>
+    {sel&&<Modal title={t("bt_reviewTitle")+" · "+sel.id} onClose={()=>setSel(null)}>
+      <div className="muted" style={{fontSize:13,marginBottom:8}}>{sel.region} · {t(sel.band)} · {t("bt_source")}: {t(sel.source)}</div>
+      <div style={{fontSize:13,marginBottom:2,fontWeight:600}}>{t("bt_trend")}: <span className="mono muted">{sel.start}% → {sel.cur}%</span></div>
+      <MiniTrend start={sel.start} cur={sel.cur}/>
+      <div className="banner" style={{margin:"12px 0"}}>● {t("bt_redline")}</div>
+      <div style={{display:"flex",gap:8}}>
+        <button className="btn" onClick={()=>act(sel.id,"refer")}>↗ {t("bt_refer")}</button>
+        <button className="btn secondary" onClick={()=>act(sel.id,"keep")}>{t("bt_keep")}</button>
+      </div>
+    </Modal>}
+  </div>);
+}
+
+/* ===== UC-12 International Benchmarking ===== */
+const BENCH=[
+  {dim:"bm_hbr", ksa:40.5, target:34,  oecd:30,  best:25,  lowBetter:true,  unit:"%"},
+  {dim:"bm_fair",ksa:0.58, target:1.0, oecd:0.90, best:1.10, lowBetter:false, unit:""},
+  {dim:"bm_cov", ksa:65,   target:80,  oecd:72,  best:88,  lowBetter:false, unit:"%"},
+  {dim:"bm_cost",ksa:1.0,  target:0.85,oecd:0.80, best:0.70, lowBetter:true,  unit:"x"},
+  {dim:"bm_sat", ksa:3.9,  target:4.3, oecd:4.1, best:4.6, lowBetter:false, unit:"/5"},
+];
+function Benchmarking(){
+  const {t}=useStore(); const [gen,setGen]=useState(false);
+  const meets=(b)=> b.lowBetter ? b.ksa<=b.target : b.ksa>=b.target;
+  return (<div className="fade">
+    <PageHeader title={t("nav_benchmark")} sub={t("bm_sub")} right={<span className="sect-right">
+      <button className="btn secondary sm" onClick={()=>setGen(true)}>📄 {t("bm_gen")}</button>
+      <AgentBadge name={t("agent_bench")} lvl="L2"/></span>}/>
+    {gen&&<div className="banner" style={{marginBottom:14}}>✓ {t("bm_done")}</div>}
+    <Section title={t("nav_benchmark")} sub={t("bm_dimsNote")}>
+      <table className="tbl"><thead><tr>
+        <th>{t("bm_dim")}</th><th className="right-num">{t("bm_ksa")}</th><th className="right-num">{t("bm_ksaTarget")}</th>
+        <th className="right-num">{t("bm_oecd")}</th><th className="right-num">{t("bm_best")}</th><th>{t("bm_gap")}</th></tr></thead>
+        <tbody>{BENCH.map(b=>{ const ok=meets(b); return (<tr key={b.dim}>
+          <td>{t(b.dim)} <span className="muted" style={{fontSize:11}}>({t(b.lowBetter?"bm_low":"bm_high")})</span></td>
+          <td className="right-num mono" style={{fontWeight:700,color:ok?"var(--green)":"var(--amber)"}}>{b.ksa}{b.unit}</td>
+          <td className="right-num mono muted">{b.target}{b.unit}</td>
+          <td className="right-num mono">{b.oecd}{b.unit}</td>
+          <td className="right-num mono">{b.best}{b.unit}</td>
+          <td><span className={"chip "+(ok?"":"amber")}>{ok?("✓ "+t("bm_meets")):t("bm_below")}</span></td>
+        </tr>);})}</tbody></table>
+    </Section>
+    <Section title={t("bm_satTitle")}>
+      <div className="muted" style={{fontSize:13,lineHeight:1.7}}>{t("bm_note")}</div>
+    </Section>
+  </div>);
+}
+Object.assign(I18N.en,{ nav_referrals:"Beneficiary Tracking", nav_benchmark:"Intl. Benchmarking", agent_track:"Beneficiary Status Tracking agent", agent_bench:"Benchmarking agent",
+  bt_sub:"Track beneficiary improvement and route referrals for human review", bt_rule:"Improvement = HBR ≤ 38% without support for 3 consecutive months → referral list",
+  bt_redline:"Subsidy continues uninterrupted during review — the system never auto-terminates", bt_run:"Run detection",
+  bt_new:"New", bt_review:"Monitoring", bt_referred:"Referred to BO", bt_approved:"Approved",
+  bt_id:"Beneficiary", bt_region:"Region", bt_band:"Income band", bt_curHBR:"Current HBR", bt_startHBR:"Start HBR", bt_source:"Improvement source", bt_months:"Duration", bt_status:"Status",
+  bt_gosi:"GOSI", bt_housing:"Housing", bt_both:"Both", band_urgent:"Most urgent", band_low:"Low income", band_mid:"Mid income",
+  bt_reviewBtn:"Review", bt_reviewTitle:"Beneficiary review", bt_trend:"3-month HBR trend", bt_keep:"Keep support", bt_refer:"Refer to Business Owner",
+  bm_sub:"Benchmark KSA housing support against reference countries (OECD + peers)", bm_gen:"Generate benchmark report", bm_done:"Benchmark report generated",
+  bm_dim:"Benchmark", bm_ksa:"KSA (current)", bm_ksaTarget:"KSA target", bm_oecd:"OECD avg", bm_best:"Best-in-class", bm_gap:"Status",
+  bm_hbr:"Housing Burden (HBR)", bm_fair:"Fairness Gap", bm_cov:"Coverage", bm_cost:"Cost ratio", bm_sat:"User satisfaction",
+  bm_low:"lower better", bm_high:"higher better", bm_meets:"Meets target", bm_below:"Below target",
+  bm_dimsNote:"5 benchmarks vs reference countries", bm_satTitle:"User satisfaction (BR-B06)",
+  bm_note:"Satisfaction blends Sakani ratings, contract-cancellation rate (inverse) and the OECD Better Life Index — contextual only; it does not alter the other benchmark recommendations." });
+Object.assign(I18N.zh,{ nav_referrals:"受益人追踪", nav_benchmark:"国际对标", agent_track:"受益人状态追踪 agent", agent_bench:"国际对标 agent",
+  bt_sub:"追踪受益人改善情况，将转复核名单转交人工审核", bt_rule:"改善判定 = 无支援下 HBR ≤ 38% 连续 3 个月 → 进入转复核名单",
+  bt_redline:"复核期间补贴持续不间断 — 系统永不自动停补", bt_run:"运行检测",
+  bt_new:"新建", bt_review:"监测中", bt_referred:"已转业务负责人", bt_approved:"已批准",
+  bt_id:"受益人", bt_region:"区域", bt_band:"收入档", bt_curHBR:"当前 HBR", bt_startHBR:"起始 HBR", bt_source:"改善来源", bt_months:"持续", bt_status:"状态",
+  bt_gosi:"GOSI", bt_housing:"住宅", bt_both:"两者", band_urgent:"最急需", band_low:"低收入", band_mid:"中等收入",
+  bt_reviewBtn:"复核", bt_reviewTitle:"受益人复核", bt_trend:"近 3 个月 HBR 趋势", bt_keep:"维持支援", bt_refer:"转业务负责人",
+  bm_sub:"将沙特住房支持与参照国(OECD + 同侪)对标", bm_gen:"生成对标报告", bm_done:"对标报告已生成",
+  bm_dim:"对标维度", bm_ksa:"沙特(当前)", bm_ksaTarget:"沙特目标", bm_oecd:"OECD 均值", bm_best:"最佳实践", bm_gap:"状态",
+  bm_hbr:"住房负担 (HBR)", bm_fair:"公平性差距", bm_cov:"覆盖率", bm_cost:"成本比", bm_sat:"用户满意度",
+  bm_low:"越低越好", bm_high:"越高越好", bm_meets:"达标", bm_below:"未达标",
+  bm_dimsNote:"5 个维度 vs 参照国", bm_satTitle:"用户满意度 (BR-B06)",
+  bm_note:"满意度综合 Sakani 评分、合同取消率(反向)与 OECD Better Life 指数 —— 仅作上下文参考，不改变其它对标建议。" });
+Object.assign(I18N.ar,{ nav_referrals:"تتبع المستفيدين", nav_benchmark:"المقارنة الدولية", agent_track:"وكيل تتبع حالة المستفيد", agent_bench:"وكيل المقارنة المعيارية",
+  bt_sub:"تتبّع تحسّن المستفيدين وإحالة القائمة للمراجعة البشرية", bt_rule:"التحسّن = HBR ≤ ٣٨٪ بدون دعم لمدة ٣ أشهر متتالية ← قائمة الإحالة",
+  bt_redline:"يستمر الدعم دون انقطاع أثناء المراجعة — النظام لا يوقف الدعم تلقائياً أبداً", bt_run:"تشغيل الكشف",
+  bt_new:"جديد", bt_review:"قيد المتابعة", bt_referred:"محال لمالك الأعمال", bt_approved:"معتمد",
+  bt_id:"المستفيد", bt_region:"المنطقة", bt_band:"شريحة الدخل", bt_curHBR:"HBR الحالي", bt_startHBR:"HBR البدائي", bt_source:"مصدر التحسّن", bt_months:"المدة", bt_status:"الحالة",
+  bt_gosi:"التأمينات", bt_housing:"سكني", bt_both:"كلاهما", band_urgent:"الأشد حاجة", band_low:"منخفض الدخل", band_mid:"متوسط الدخل",
+  bt_reviewBtn:"مراجعة", bt_reviewTitle:"مراجعة المستفيد", bt_trend:"اتجاه HBR خلال ٣ أشهر", bt_keep:"الإبقاء على الدعم", bt_refer:"إحالة لمالك الأعمال",
+  bm_sub:"مقارنة دعم الإسكان السعودي بالدول المرجعية (OECD + النظراء)", bm_gen:"توليد تقرير المقارنة", bm_done:"تم توليد تقرير المقارنة",
+  bm_dim:"المعيار", bm_ksa:"السعودية (حالي)", bm_ksaTarget:"هدف السعودية", bm_oecd:"متوسط OECD", bm_best:"الأفضل", bm_gap:"الحالة",
+  bm_hbr:"عبء السكن (HBR)", bm_fair:"فجوة العدالة", bm_cov:"التغطية", bm_cost:"نسبة التكلفة", bm_sat:"رضا المستخدم",
+  bm_low:"الأقل أفضل", bm_high:"الأعلى أفضل", bm_meets:"محقق", bm_below:"دون الهدف",
+  bm_dimsNote:"٥ معايير مقابل الدول المرجعية", bm_satTitle:"رضا المستخدم (BR-B06)",
+  bm_note:"يجمع الرضا تقييمات سكني ونسبة إلغاء العقود (عكسياً) ومؤشر OECD لحياة أفضل — سياقي فقط، لا يغيّر التوصيات الأخرى." });
+
+/* ===== UC-11 Mortgage-Aware Support Type (substep of UC-03) ===== */
+const MORTGAGE_PROFILES=[
+  {id:"mp_a", city:"Riyadh", income:9800, product:"prod_offplan", qual:"mt_actual",
+    scen:[{k:"mt_cashpkg",hbr:39.2,bud:"−95k",elig:"ok"},{k:"mt_monthly",hbr:40.1,bud:"−1.6k/mo",elig:"ok"},
+          {k:"mt_mix",hbr:37.8,bud:"−55k +0.9k/mo",elig:"ok"},{k:"mt_land",hbr:34.5,bud:"−230k land",elig:"ok",cond:"mt_condLand"},
+          {k:"mt_interest",hbr:33.1,bud:"−interest",elig:"ok",cond:"mt_condRedf"}]},
+  {id:"mp_b", city:"Makkah", income:7400, product:"prod_ready", qual:"mt_actual",
+    scen:[{k:"mt_cashpkg",hbr:40.6,bud:"−95k",elig:"ok"},{k:"mt_monthly",hbr:41.2,bud:"−1.6k/mo",elig:"ok"},
+          {k:"mt_mix",hbr:38.4,bud:"−55k +0.9k/mo",elig:"ok"},{k:"mt_land",hbr:35.0,bud:"−230k land",elig:"no",cond:"mt_noOffplan"},
+          {k:"mt_interest",hbr:34.0,bud:"−interest",elig:"no",cond:"mt_noRedf"}]},
+  {id:"mp_c", city:"Asir", income:6200, product:"prod_self", qual:"mt_virtual", fallback:true,
+    scen:[{k:"mt_monthly",hbr:39.8,bud:"−1.6k/mo",elig:"ok"}]},
+];
+function MortgagePlanning(){
+  const {t}=useStore(); const [pid,setPid]=useState("mp_a");
+  const p=MORTGAGE_PROFILES.find(x=>x.id===pid);
+  const eligible=p.scen.filter(s=>s.elig==="ok");
+  const best=eligible.reduce((a,b)=>b.hbr<a.hbr?b:a, eligible[0]);
+  const allOver=eligible.every(s=>s.hbr>38);
+  return (<div className="fade">
+    <PageHeader title={t("nav_mortgage")} sub={t("mt_sub")} right={<AgentBadge name={t("agent_alloc")} lvl="L2"/>}/>
+    <div className="banner" style={{marginBottom:14}}>● {t("mt_note03")}</div>
+    <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+      {MORTGAGE_PROFILES.map(x=>(<button key={x.id} className={"btn sm "+(x.id===pid?"":"secondary")} onClick={()=>setPid(x.id)}>{x.city}</button>))}
+    </div>
+    <div className="cols-2" style={{marginBottom:4}}>
+      <Section title={t("mt_profile")}>
+        <div className="kv">
+          <div className="kv-row"><span className="muted">{t("mt_city")}</span><span>{p.city}</span></div>
+          <div className="kv-row"><span className="muted">{t("mt_income")}</span><span className="mono">⃁ {n0(p.income)}/mo</span></div>
+          <div className="kv-row"><span className="muted">{t("mt_product")}</span><span>{t(p.product)}</span></div>
+          <div className="kv-row"><span className="muted">{t("mt_qual")}</span><span><span className={"chip "+(p.qual==="mt_actual"?"":"amber")}>{t(p.qual)}</span></span></div>
+        </div>
+        {p.fallback&&<div className="banner" style={{marginTop:12,background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("mt_fallback")}</div>}
+      </Section>
+      <Section title={t("mt_reco")}>
+        <div className="brief-card" style={{margin:0}}><div className="bh">✦ {t(best.k)}</div>
+          <div className="bv">HBR → {best.hbr}%</div>
+          <div className="bs muted">{t("mt_budimpact")}: {best.bud}</div></div>
+        {allOver&&<div className="banner" style={{marginTop:10,background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("mt_allover")}</div>}
+        <div className="muted" style={{fontSize:12,marginTop:10}}>{t("mt_field17")}</div>
+      </Section>
+    </div>
+    <Section title={t("mt_scenarios")}>
+      <table className="tbl"><thead><tr><th>{t("mt_type")}</th><th className="right-num">{t("mt_exphbr")}</th><th>{t("mt_budimpact")}</th><th>{t("mt_elig")}</th></tr></thead>
+        <tbody>{p.scen.map(s=>{ const isBest=s===best; return (<tr key={s.k} style={isBest?{background:"var(--green-50)"}:null}>
+          <td>{isBest?"✦ ":""}{t(s.k)}{s.cond?<span className="muted" style={{fontSize:11}}> · {t(s.cond)}</span>:null}</td>
+          <td className="right-num mono" style={{fontWeight:isBest?700:400,color:s.hbr<=38?"var(--green)":"var(--amber)"}}>{s.hbr}%</td>
+          <td className="mono muted">{s.bud}</td>
+          <td>{s.elig==="ok"?<span className="chip">{t("mt_eligible")}</span>:<span className="chip amber">{t("mt_inelig")}</span>}</td>
+        </tr>);})}</tbody></table>
+    </Section>
+  </div>);
+}
+
+/* ===== UC-13 Product Portfolio / Inventory Absorption (UC-06 ext) ===== */
+const INVENTORY=[
+  {region:"Riyadh", units:4200, demand:3100, stale:false},
+  {region:"Makkah", units:2600, demand:2450, stale:false},
+  {region:"Asir",   units:1800, demand:520,  stale:false},
+  {region:"Eastern",units:3100, demand:980,  stale:true},
+];
+function InventoryAbsorption(){
+  const {t}=useStore(); const [reg,setReg]=useState("Riyadh"); const [approved,setApproved]=useState(false);
+  const row=INVENTORY.find(r=>r.region===reg);
+  const absorb=Math.min(100,Math.round(row.demand/row.units*100));
+  const gap=100-absorb;
+  const budgetPct=gap>50?24:gap>25?13:7;
+  const escalate=budgetPct>20;
+  const insufficient=row.demand < row.units*0.4;
+  const afterUptake=Math.min(96, absorb+Math.round(gap*0.55));
+  return (<div className="fade">
+    <PageHeader title={t("nav_inventory")} sub={t("iv_sub")} right={<AgentBadge name={t("agent_realloc")} lvl="L2"/>}/>
+    <div className="banner" style={{marginBottom:14}}>● {t("iv_rules")}</div>
+    <Section title={t("iv_invTitle")} sub={t("iv_invNote")}>
+      <table className="tbl"><thead><tr><th>{t("bt_region")}</th><th className="right-num">{t("iv_units")}</th><th className="right-num">{t("iv_demand")}</th><th>{t("iv_absorb")}</th><th></th></tr></thead>
+        <tbody>{INVENTORY.map(r=>{ const ab=Math.min(100,Math.round(r.demand/r.units*100)); return (<tr key={r.region} style={r.region===reg?{background:"var(--green-50)"}:null}>
+          <td>{r.region}{r.stale&&<span className="chip amber" style={{marginInlineStart:6,fontSize:10}}>⚠ {t("iv_stale")}</span>}</td>
+          <td className="right-num mono">{n0(r.units)}</td><td className="right-num mono">{n0(r.demand)}</td>
+          <td style={{minWidth:130}}><Progress v={ab/100} color={ab>=80?"var(--green)":"var(--amber)"}/><span className="muted" style={{fontSize:11}}>{ab}% {t("iv_absorbable")}</span></td>
+          <td><button className="btn ghost sm" onClick={()=>{setReg(r.region);setApproved(false);}}>{t("iv_plan")}</button></td>
+        </tr>);})}</tbody></table>
+    </Section>
+    <Section title={t("iv_planTitle")+" · "+reg} right={escalate&&!insufficient?<span className="chip amber">⚠ {t("iv_minister")}</span>:null}>
+      {insufficient
+        ? <div className="banner" style={{background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("iv_insufficient")}</div>
+        : <div>
+          <div className="muted" style={{fontSize:12.5,marginBottom:10}}>{t("iv_levers")}</div>
+          <div className="cols-3" style={{marginBottom:12}}>
+            <KPI label={t("iv_uptake")} value={absorb+"% → "+afterUptake+"%"} sub={t("iv_uptakeSub")} tone="good"/>
+            <KPI label={t("kpi_budget")} value={"+"+budgetPct+"%"} sub={t("iv_budgetSub")} tone={escalate?"warn":"good"}/>
+            <KPI label={t("kpi_fairness")} value="1.04" sub={t("fair_if")} tone="good"/>
+          </div>
+          <div className="muted" style={{fontSize:12}}>{t("iv_priority")}</div>
+          <button className="btn" style={{marginTop:12}} disabled={approved} onClick={()=>setApproved(true)}>{approved?("✓ "+t("done")):t("iv_approve")}</button>
+        </div>}
+    </Section>
+  </div>);
+}
+
+/* ===== UC-14 Policy & Market Impact Attribution ===== */
+const ATTRIB={ total:18, events:[{d:"2026-06-01",k:"ev_landfee",type:"policy"},{d:"2026-05-12",k:"ev_ratecut",type:"market"},{d:"2026-04",k:"ev_migration",type:"demo"}] };
+function ImpactAttribution(){
+  const {t,setRoute}=useStore(); const [act,setAct]=useState(null);
+  const segs=[{k:"ia_policy",v:11,c:"#6d5ae6"},{k:"ia_market",v:4,c:"var(--info)"},{k:"ia_demo",v:3,c:"var(--amber)"}];
+  return (<div className="fade">
+    <PageHeader title={t("nav_impact")} sub={t("ia_sub")} right={<AgentBadge name={t("agent_realloc")} lvl="L2"/>}/>
+    <div className="banner" style={{marginBottom:14,background:"var(--amber-50)",borderColor:"#ecdcae",color:"#6b5210"}}>⚠ {t("ia_trigger")}</div>
+    <Section title={t("ia_didTitle")} sub={t("ia_didNote")}>
+      <div style={{display:"flex",height:34,borderRadius:8,overflow:"hidden",marginBottom:10}}>
+        {segs.map(s=>(<div key={s.k} style={{width:(s.v/ATTRIB.total*100)+"%",background:s.c,color:"#fff",display:"grid",placeItems:"center",fontSize:12,fontWeight:700}}>{s.v}%</div>))}
+      </div>
+      <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>{segs.map(s=>(<span key={s.k} style={{fontSize:12.5}}><span style={{display:"inline-block",width:10,height:10,background:s.c,borderRadius:2,marginInlineEnd:6}}/>{t(s.k)} <b>{s.v}%</b></span>))}</div>
+      <div className="muted" style={{fontSize:12.5,marginTop:12,lineHeight:1.7}}>{t("ia_interpret")}</div>
+    </Section>
+    <Section title={t("ia_events")}>
+      <table className="tbl"><thead><tr><th>{t("ia_date")}</th><th>{t("ia_event")}</th><th>{t("ia_factor")}</th></tr></thead>
+        <tbody>{ATTRIB.events.map(e=>(<tr key={e.k}><td className="mono">{e.d}</td><td>{t(e.k)}</td>
+          <td><span className={"chip "+(e.type==="market"?"info":e.type==="demo"?"amber":"")}>{t("ia_"+e.type)}</span></td></tr>))}</tbody></table>
+    </Section>
+    <Section title={t("ia_outputs")}>
+      {act&&<div className="banner" style={{marginBottom:10}}>✓ {t(act)}</div>}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        <button className="btn" onClick={()=>setRoute("whatif")}>✦ {t("ia_feedWhatif")}</button>
+        <button className="btn secondary" onClick={()=>setAct("ia_doneUc06")}>{t("ia_uc06")}</button>
+        <button className="btn secondary" onClick={()=>setAct("ia_doneUc07")}>↗ {t("ia_uc07")}</button>
+      </div>
+    </Section>
+  </div>);
+}
+Object.assign(I18N.en,{ nav_mortgage:"Support-Type Optimizer", nav_inventory:"Inventory Absorption", nav_impact:"Policy & Market Impact", agent_realloc:"Reallocation Assessment agent",
+  mt_sub:"Pick the optimal support type per beneficiary (substep of the allocation cycle)", mt_note03:"Substep of the allocation cycle — the recommendation feeds the Support Type field of the distribution plan",
+  mt_profile:"Beneficiary profile", mt_city:"City", mt_income:"Disposable income", mt_product:"Product", mt_qual:"Analysis quality", mt_actual:"Actual mortgage", mt_virtual:"Virtual (no mortgage data)",
+  mt_fallback:"No mortgage data — default monthly support applied, marked 'without mortgage analysis'",
+  mt_reco:"Recommended support type", mt_budimpact:"Budget impact", mt_field17:"Delivered to the allocation plan as a Support-Type recommendation", mt_allover:"All scenarios exceed the 38% HBR threshold — shown with alert, not disabled",
+  mt_scenarios:"Support-type scenarios (expected HBR)", mt_type:"Support type", mt_exphbr:"Expected HBR", mt_elig:"Eligibility",
+  mt_cashpkg:"Cash package", mt_monthly:"Monthly cash", mt_mix:"Cash mix", mt_land:"In-kind land discount", mt_interest:"Bank interest support",
+  mt_condLand:"off-plan · NHC list", mt_condRedf:"REDF agreement", mt_noOffplan:"not off-plan", mt_noRedf:"no REDF agreement", mt_eligible:"Eligible", mt_inelig:"Not eligible",
+  prod_offplan:"Off-plan", prod_ready:"Ready home", prod_self:"Self-build",
+  iv_sub:"Match unsold inventory to eligible demand and size a stimulus plan to accelerate absorption", iv_rules:"Priority: longest waiting list (not highest income) · Fairness Gap ≥ 1.0 · >20% budget → Minister",
+  iv_invTitle:"Regional inventory vs eligible demand", iv_invNote:"NHC unsold units vs eligible unsigned beneficiaries", iv_units:"Unsold units", iv_demand:"Eligible demand", iv_absorb:"Absorption", iv_absorbable:"absorbable", iv_stale:"Outdated data",
+  iv_plan:"Plan", iv_planTitle:"Stimulus plan", iv_minister:"Needs Minister (>20% budget)", iv_insufficient:"Insufficient eligible demand — inventory not absorbable with current support; review allocation policy",
+  iv_levers:"Levers: raise unit price ceiling · adjust segment support rate · temporary project support", iv_uptake:"Uptake rate", iv_uptakeSub:"projected after stimulus", iv_budgetSub:"of available budget",
+  iv_priority:"Priority given to longest-waiting beneficiaries (BR-P01)", iv_approve:"Approve plan (Business Owner)",
+  ia_sub:"Isolate what's driving demand change — policy vs market vs demographic (Difference-in-Differences)", ia_trigger:"Signing rate +18% vs monthly average — exceeds the 15% threshold, attribution triggered",
+  ia_didTitle:"Impact attribution (Difference-in-Differences)", ia_didNote:"Demand change +18% decomposed by factor", ia_policy:"Policy effect", ia_market:"Market effect", ia_demo:"Demographic effect",
+  ia_interpret:"Mostly policy-driven (new land-fee relief), not market overheating — avoids over-allocating budget on a false demand signal.",
+  ia_events:"Concurrent events", ia_date:"Date", ia_event:"Event", ia_factor:"Factor", ev_landfee:"New land-fee relief", ev_ratecut:"Interest rate cut", ev_migration:"Regional migration influx",
+  ia_outputs:"Route the impact report", ia_feedWhatif:"Feed What-if with actual impact", ia_uc06:"Update reallocation", ia_uc07:"Escalate via decision routing",
+  ia_doneUc06:"Reallocation recommendation updated with isolation results", ia_doneUc07:"Impact report routed to decision routing" });
+Object.assign(I18N.zh,{ nav_mortgage:"补贴类型优选", nav_inventory:"库存去化", nav_impact:"政策与市场影响", agent_realloc:"再平衡评估 agent",
+  mt_sub:"为每位受益人优选最优支援类型(配分周期的子步骤)", mt_note03:"配分周期的子步骤 —— 推荐结果写入配分方案的『支援类型』字段",
+  mt_profile:"受益人画像", mt_city:"城市", mt_income:"可支配收入", mt_product:"产品", mt_qual:"分析质量", mt_actual:"真实抵押数据", mt_virtual:"虚拟(无抵押数据)",
+  mt_fallback:"无抵押数据 —— 采用默认月度支援，标注『未做抵押分析』",
+  mt_reco:"推荐支援类型", mt_budimpact:"预算影响", mt_field17:"作为支援类型推荐交付配分方案", mt_allover:"所有方案均超过 38% HBR 阈值 —— 带告警显示，不禁用",
+  mt_scenarios:"支援类型情景(预计 HBR)", mt_type:"支援类型", mt_exphbr:"预计 HBR", mt_elig:"是否适用",
+  mt_cashpkg:"现金一次性", mt_monthly:"按月现金", mt_mix:"现金混合", mt_land:"实物土地折扣", mt_interest:"银行利息支援",
+  mt_condLand:"期房 · NHC 名录", mt_condRedf:"REDF 协议", mt_noOffplan:"非期房", mt_noRedf:"无 REDF 协议", mt_eligible:"适用", mt_inelig:"不适用",
+  prod_offplan:"期房", prod_ready:"现房", prod_self:"自建",
+  iv_sub:"将未售库存与合格需求匹配，测算去化激励方案", iv_rules:"优先级：最长等待名单(非最高收入)· Fairness Gap ≥ 1.0 · 预算 >20% → 部长",
+  iv_invTitle:"区域库存 vs 合格需求", iv_invNote:"NHC 未售单元 vs 合格未签约受益人", iv_units:"未售单元", iv_demand:"合格需求", iv_absorb:"去化", iv_absorbable:"可去化", iv_stale:"数据过期",
+  iv_plan:"方案", iv_planTitle:"去化激励方案", iv_minister:"需部长(预算 >20%)", iv_insufficient:"合格需求不足 —— 当前支援无法去化该库存；建议复核配分政策",
+  iv_levers:"杠杆：提高单价上限 · 调整分档支援率 · 项目临时加码", iv_uptake:"去化率", iv_uptakeSub:"激励后预计", iv_budgetSub:"占可用预算",
+  iv_priority:"优先长期等待的受益人(BR-P01)", iv_approve:"批准方案(业务负责人)",
+  ia_sub:"用 Difference-in-Differences 拆解需求变化：政策 vs 市场 vs 人口", ia_trigger:"签约率较月均 +18% —— 超过 15% 阈值，触发影响归因",
+  ia_didTitle:"影响归因(Difference-in-Differences)", ia_didNote:"需求变化 +18% 按因素拆解", ia_policy:"政策效应", ia_market:"市场效应", ia_demo:"人口效应",
+  ia_interpret:"主要由政策驱动(新土地费减免)，并非市场过热 —— 避免因误判需求而盲目加预算。",
+  ia_events:"并发事件", ia_date:"日期", ia_event:"事件", ia_factor:"因素", ev_landfee:"新土地费减免", ev_ratecut:"利率下调", ev_migration:"区域人口流入",
+  ia_outputs:"分发影响报告", ia_feedWhatif:"用真实影响喂给 What-if", ia_uc06:"更新再平衡", ia_uc07:"经决策路由上报",
+  ia_doneUc06:"再平衡建议已用归因结果更新", ia_doneUc07:"影响报告已分发至决策路由" });
+Object.assign(I18N.ar,{ nav_mortgage:"مُحسِّن نوع الدعم", nav_inventory:"استيعاب المخزون", nav_impact:"أثر السياسات والسوق", agent_realloc:"وكيل تقييم إعادة التوزيع",
+  mt_sub:"اختيار نوع الدعم الأمثل لكل مستفيد (خطوة ضمن دورة التخصيص)", mt_note03:"خطوة فرعية من دورة التخصيص — تُغذّي حقل نوع الدعم في خطة التوزيع",
+  mt_profile:"ملف المستفيد", mt_city:"المدينة", mt_income:"الدخل المتاح", mt_product:"المنتج", mt_qual:"جودة التحليل", mt_actual:"رهن فعلي", mt_virtual:"افتراضي (بدون بيانات رهن)",
+  mt_fallback:"لا توجد بيانات رهن — يُطبّق الدعم الشهري الافتراضي مع وسم 'بدون تحليل رهن'",
+  mt_reco:"نوع الدعم الموصى به", mt_budimpact:"الأثر على الميزانية", mt_field17:"يُسلَّم إلى خطة التخصيص كتوصية بنوع الدعم", mt_allover:"كل السيناريوهات تتجاوز عتبة HBR ٣٨٪ — تُعرض مع تنبيه دون تعطيل",
+  mt_scenarios:"سيناريوهات نوع الدعم (HBR المتوقع)", mt_type:"نوع الدعم", mt_exphbr:"HBR المتوقع", mt_elig:"الأهلية",
+  mt_cashpkg:"حزمة نقدية", mt_monthly:"نقد شهري", mt_mix:"مزيج نقدي", mt_land:"خصم أرض عيني", mt_interest:"دعم فائدة بنكية",
+  mt_condLand:"على الخارطة · قائمة NHC", mt_condRedf:"اتفاقية REDF", mt_noOffplan:"ليس على الخارطة", mt_noRedf:"لا اتفاقية REDF", mt_eligible:"مؤهل", mt_inelig:"غير مؤهل",
+  prod_offplan:"على الخارطة", prod_ready:"جاهز", prod_self:"بناء ذاتي",
+  iv_sub:"مطابقة المخزون غير المباع بالطلب المؤهل وتحديد خطة تحفيز لتسريع الاستيعاب", iv_rules:"الأولوية: أطول قائمة انتظار (لا الأعلى دخلاً) · فجوة العدالة ≥ ١٫٠ · >٢٠٪ ميزانية → الوزير",
+  iv_invTitle:"المخزون الإقليمي مقابل الطلب المؤهل", iv_invNote:"وحدات NHC غير المباعة مقابل المستفيدين المؤهلين غير المتعاقدين", iv_units:"وحدات غير مباعة", iv_demand:"طلب مؤهل", iv_absorb:"الاستيعاب", iv_absorbable:"قابل للاستيعاب", iv_stale:"بيانات قديمة",
+  iv_plan:"خطة", iv_planTitle:"خطة التحفيز", iv_minister:"يتطلب الوزير (>٢٠٪ ميزانية)", iv_insufficient:"طلب مؤهل غير كافٍ — لا يمكن استيعاب المخزون بالدعم الحالي؛ راجع سياسة التخصيص",
+  iv_levers:"الروافع: رفع سقف سعر الوحدة · تعديل نسبة دعم الشريحة · دعم مؤقت للمشروع", iv_uptake:"معدل الاستيعاب", iv_uptakeSub:"متوقع بعد التحفيز", iv_budgetSub:"من الميزانية المتاحة",
+  iv_priority:"الأولوية للمستفيدين الأطول انتظاراً (BR-P01)", iv_approve:"اعتماد الخطة (مالك الأعمال)",
+  ia_sub:"عزل محرّك تغيّر الطلب — سياسة مقابل سوق مقابل سكان (الفروق في الفروق)", ia_trigger:"معدل التعاقد +١٨٪ مقابل المتوسط الشهري — يتجاوز عتبة ١٥٪، تم تفعيل العزل",
+  ia_didTitle:"عزل الأثر (Difference-in-Differences)", ia_didNote:"تغيّر الطلب +١٨٪ مفصّلاً حسب العامل", ia_policy:"أثر السياسة", ia_market:"أثر السوق", ia_demo:"أثر سكاني",
+  ia_interpret:"مدفوع غالباً بالسياسة (إعفاء رسوم الأراضي الجديد) لا بفورة السوق — يتجنّب تضخيم الميزانية على إشارة طلب خاطئة.",
+  ia_events:"أحداث متزامنة", ia_date:"التاريخ", ia_event:"الحدث", ia_factor:"العامل", ev_landfee:"إعفاء رسوم أراضٍ جديد", ev_ratecut:"خفض سعر الفائدة", ev_migration:"تدفّق هجرة إقليمي",
+  ia_outputs:"توجيه تقرير الأثر", ia_feedWhatif:"تغذية What-if بالأثر الفعلي", ia_uc06:"تحديث إعادة التوزيع", ia_uc07:"التصعيد عبر توجيه القرار",
+  ia_doneUc06:"تم تحديث توصية إعادة التوزيع بنتائج العزل", ia_doneUc07:"تم توجيه تقرير الأثر إلى توجيه القرار" });
+
 function App(){
   const [user,setUserState]=useState(null);
   const [lang,setLang]=useState(()=>{ try{ const q=new URLSearchParams(window.location.search).get("ln"); if(q==="zh"||q==="ar"||q==="en") return q; }catch(e){} return "en"; });
@@ -1500,15 +1843,16 @@ function App(){
 
   let page=null;
   if(user==="analyst"){
-    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="forecast"?<ForecastFairness/>
-      : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/> : route==="audit"?<AuditTrailPage/>
+    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="mortgage"?<MortgagePlanning/> : route==="forecast"?<ForecastFairness/>
+      : route==="referrals"?<BeneficiaryTracking/> : route==="impact"?<ImpactAttribution/> : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/>
+      : route==="inventory"?<InventoryAbsorption/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/>
       : route==="copilot"?<CopilotHandoff/> : <AnalystHome/>;
   } else if(user==="owner"){
-    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="forecast"?<ForecastFairness/>
-      : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
+    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="referrals"?<BeneficiaryTracking/> : route==="forecast"?<ForecastFairness/>
+      : route==="inventory"?<InventoryAbsorption/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
   } else {
     page = route==="decisions"?<DecisionPackages filter={p=>["escalated","adjudicated","rejected"].includes(p.status)}/>
-      : route==="forecast"?<ForecastFairness/> : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
+      : route==="forecast"?<ForecastFairness/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
   }
   return (<Ctx.Provider value={store}>
     <TopBar/>
