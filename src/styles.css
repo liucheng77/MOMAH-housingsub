@@ -83,8 +83,9 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .rel-time{display:flex;flex-direction:column}
 .rel-item{position:relative;padding-inline-start:22px;padding-bottom:18px;border-inline-start:2px solid var(--line)}
 .rel-item:last-child{border-color:transparent;padding-bottom:2px}
-.rel-dot{position:absolute;inset-inline-start:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#cbd5d0;border:2px solid #fff}
-.rel-item.cur .rel-dot{background:var(--green)}
+.rel-mtitle{display:inline-flex;align-items:center;gap:8px}
+.rel-dot{position:absolute;inset-inline-start:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff;box-shadow:0 0 0 1px var(--green-100)}
+.rel-item.cur .rel-dot{box-shadow:0 0 0 3px var(--green-100)}
 .rel-head{margin-bottom:6px}
 .rel-list{margin:0;padding-inline-start:18px;font-size:13px;line-height:1.7;color:var(--ink)}
 .rel-list li{margin-bottom:3px}
