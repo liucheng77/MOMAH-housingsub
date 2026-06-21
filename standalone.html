@@ -86,7 +86,19 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 
 /* ---------- layout ---------- */
 .shell{display:flex;min-height:calc(100% - var(--topbar-h))}
-.sidebar{width:var(--sidebar-w);background:#fff;border-inline-end:1px solid var(--line);padding:16px 12px;flex:0 0 auto}
+.sidebar{width:var(--sidebar-w);background:#fff;border-inline-end:1px solid var(--line);padding:16px 12px;flex:0 0 auto;display:flex;flex-direction:column;min-height:calc(100vh - var(--topbar-h, 0px))}
+.side-foot{margin-top:auto;padding-top:14px}
+.ver-chip{display:inline-flex;align-items:center;gap:7px;width:100%;justify-content:flex-start;background:var(--green-50);border:1px solid var(--green-100);color:var(--green-dark);font-weight:700;font-size:12.5px;padding:8px 11px;border-radius:10px;cursor:pointer;transition:.15s;font-family:inherit}
+.ver-chip:hover{background:var(--green-100)}
+.ver-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-100);flex:0 0 auto}
+.rel-time{display:flex;flex-direction:column}
+.rel-item{position:relative;padding-inline-start:22px;padding-bottom:18px;border-inline-start:2px solid var(--line)}
+.rel-item:last-child{border-color:transparent;padding-bottom:2px}
+.rel-dot{position:absolute;inset-inline-start:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#cbd5d0;border:2px solid #fff}
+.rel-item.cur .rel-dot{background:var(--green)}
+.rel-head{margin-bottom:6px}
+.rel-list{margin:0;padding-inline-start:18px;font-size:13px;line-height:1.7;color:var(--ink)}
+.rel-list li{margin-bottom:3px}
 .sidebar .role{padding:10px 12px;border-radius:var(--radius-sm);background:var(--green-50);margin-bottom:14px}
 .sidebar .role .nm{font-weight:700;color:var(--green-dark)}
 .sidebar .role .rl{font-size:12px;color:var(--muted)}
@@ -549,7 +561,7 @@ function buildForecast(scn){
 const I18N = {
   en:{
     appName:"Dynamic Subsidy Allocation & Optimization",
-    sso_title:"Momrah Single Sign-On", sso_sub:"Unified national access to the Ministry of Municipalities & Housing digital services.", identity:"Identity",
+    sso_title:"MoMAH Single Sign-On", sso_sub:"Unified national access to the Ministry of Municipalities & Housing digital services.", identity:"Identity",
     signInTitle:"Sign In", forgotPwd:"Forgot password?", securityCode:"Security code", or_:"or",
     nafath:"Nafath national access", noAccount:"Don't have an account?", createAccount:"Create New Account",
     nic1:"NIC", nic2:"National Identity Card", identityPh:"Select identity",
@@ -918,8 +930,36 @@ const NAV = {
   owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
   minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
 };
+const RELEASES=[
+  {ver:"v1.4", date:"2026-06-21",
+    en:["UC-05/11/12/13/14 pages — full BRD use-case coverage","Data-flow funnel on Data Readiness (6 sources → BIDSC)","Internal UC codes removed from the UI","Login title fixed to MoMAH"],
+    zh:["新增 UC-05/11/12/13/14 五页 —— BRD 用例全覆盖","Data Readiness 数据流向漏斗(6 源 → BIDSC)","移除界面中的 UC 编号","登录标题修正为 MoMAH"]},
+  {ver:"v1.3", date:"2026-06-20",
+    en:["What-if AI assessment bubble + Apply AI suggestion","Orchestration nodes: progress-fill, agent-purple","Startup crash fixed (classic JSX runtime)"],
+    zh:["What-if AI 评估气泡 + 应用 AI 建议","编排节点:进度条填充、agent 紫色","启动崩溃修复(经典 JSX runtime)"]},
+  {ver:"v1.2", date:"2026-06-18",
+    en:["Decision packages with SLA + clickable audit trail","Leakage escalation: analyst → BO → minister","Housing Copilot delivery briefs"],
+    zh:["决策包 SLA + 可点工单审计","漏损升级:分析师 → 业务负责人 → 部长","Housing Copilot 交付简报"]},
+  {ver:"v1.1", date:"2026-06-15",
+    en:["Single sign-on + 3 roles","Data Readiness, Allocation approval flow","Forecast & Fairness, What-if engine"],
+    zh:["单点登录 + 三角色","Data Readiness、配分审批流","Forecast & Fairness、What-if 引擎"]},
+];
+const APP_VER=RELEASES[0].ver;
+function ReleaseNotes({onClose}){
+  const {t,lang}=useStore(); const pick=(r)=> r[lang]||r.en;
+  return (<Modal title={t("rel_title")} onClose={onClose}>
+    <div className="rel-time">
+      {RELEASES.map((r,i)=>(<div key={r.ver} className={"rel-item"+(i===0?" cur":"")}>
+        <span className="rel-dot"/>
+        <div className="rel-head"><b>{r.ver}</b> <span className="muted" style={{fontSize:12}}>· {r.date}</span>{i===0?<span className="chip" style={{marginInlineStart:8}}>{t("rel_current")}</span>:null}</div>
+        <ul className="rel-list">{pick(r).map((x,j)=>(<li key={j}>{x}</li>))}</ul>
+      </div>))}
+    </div>
+  </Modal>);
+}
 function Sidebar(){
   const {t,user,route,setRoute,packages}=useStore();
+  const [rel,setRel]=useState(false);
   const pendingForOwner = packages.filter(p=>p.status==="submitted").length;
   const pendingForMin = packages.filter(p=>p.status==="escalated").length;
   return (<div className="sidebar">
@@ -931,6 +971,12 @@ function Sidebar(){
         <span className="ico">{ic}</span><span style={{flex:1}}>{t(k)}</span>
         {badge?<span className="badge-count">{badge}</span>:null}</div>);
     })}
+    <div className="side-foot">
+      <button className="ver-chip" onClick={()=>setRel(true)} title={t("rel_title")}>
+        <span className="ver-dot"/> {APP_VER} <span className="muted" style={{fontSize:11,fontWeight:400}}>· {RELEASES[0].date}</span>
+      </button>
+    </div>
+    {rel&&<ReleaseNotes onClose={()=>setRel(false)}/>}
   </div>);
 }
 
@@ -1794,9 +1840,9 @@ Object.assign(I18N.ar,{ agent_data:"وكيل تحديث البيانات وال�
 Object.assign(I18N.en,{ cop_sumTitle:"Delivery summary", cop_sumText:"After each approval, the outputs are delivered to Housing Copilot via the API Contract (< 30s) and surfaced in its presentation layer as a strategic brief.", cop_for:"For", cop_aud:"Minister · Business Owner · strategic decision-makers", cop_i1:"Support recommendation (type + amount + rationale)", cop_i2:"Current & projected HBR", cop_i3:"Fairness Gap (multi-dimensional)", cop_i4:"What-if results", cop_note:"Read-only consumption — Copilot never executes; decisions stay human." });
 Object.assign(I18N.zh,{ cop_sumTitle:"交付摘要", cop_sumText:"每次批准后，输出通过 API 契约交付 Housing Copilot（< 30 秒），并在其展示层作为战略简报呈现。", cop_for:"供参考", cop_aud:"部长 · 业务负责人 · 战略决策层", cop_i1:"补贴推荐（类型 + 金额 + 理由）", cop_i2:"当前与预测 HBR", cop_i3:"公平性差距（多维）", cop_i4:"What-if 结果", cop_note:"只读消费 — Copilot 永不执行；决定始终在人。" });
 Object.assign(I18N.ar,{ cop_sumTitle:"ملخص التسليم", cop_sumText:"بعد كل اعتماد، تُسلَّم المخرجات إلى مساعد الإسكان عبر عقد الـ API (< ٣٠ ثانية) وتُعرض في طبقة العرض كموجز استراتيجي.", cop_for:"للاطلاع", cop_aud:"الوزير · مالك الأعمال · صنّاع القرار الاستراتيجي", cop_i1:"توصية الدعم (النوع + المبلغ + المبرر)", cop_i2:"HBR الحالي والمتوقع", cop_i3:"فجوة العدالة (متعددة الأبعاد)", cop_i4:"نتائج المحاكاة", cop_note:"استهلاك للقراءة فقط — لا ينفّذ المساعد؛ القرار يبقى بشرياً." });
-Object.assign(I18N.en,{ applyReco:"Apply AI suggestion", save_over:"⚠ Exceeds 43%" });
-Object.assign(I18N.zh,{ applyReco:"应用 AI 建议", save_over:"⚠ 超出 43%" });
-Object.assign(I18N.ar,{ applyReco:"تطبيق توصية الذكاء", save_over:"⚠ يتجاوز ٤٣٪" });
+Object.assign(I18N.en,{ applyReco:"Apply AI suggestion", save_over:"⚠ Exceeds 43%", rel_title:"Release notes", rel_current:"Current" });
+Object.assign(I18N.zh,{ applyReco:"应用 AI 建议", save_over:"⚠ 超出 43%", rel_title:"更新日志", rel_current:"当前" });
+Object.assign(I18N.ar,{ applyReco:"تطبيق توصية الذكاء", save_over:"⚠ يتجاوز ٤٣٪", rel_title:"سجل الإصدارات", rel_current:"الحالي" });
 Object.assign(I18N.en,{ askAI:"Ask AI", runLevers:"Run with current levers", ai_title:"AI assessment", ai_start:"Drag the levers or use Ask AI to start a simulation — I'll assess the trade-offs.", ai_fairlow:"Fairness Gap is still {fg} (<1.0) — the low-income segment is still under-served. I'd raise ‘Reallocate’ or ‘Boost <10k’.", ai_tradeoff:"HBR improves to {hbr} and fairness rises, but boosting low-income support eats into savings (only {save}). I'd offset with a higher cap or off-plan restriction — or accept it as a people-first trade-off.", ai_win:"Savings {save} ({pct}% of budget) with Fairness Gap {fg} — fairness and savings both improve. I'd assemble the decision package and submit.", ai_neutral:"Current scenario: savings {save}, Fairness Gap {fg}, HBR {hbr}. You can fine-tune further or submit.", ai_minister:"Reallocation exceeds 20% — this needs the Minister's adjudication." });
 Object.assign(I18N.zh,{ askAI:"Ask AI", runLevers:"按当前杠杆运行", ai_title:"AI 评估", ai_start:"拖动杠杆或用 Ask AI 开始推演 —— 我会评估其中的权衡。", ai_fairlow:"Fairness Gap 仍为 {fg}（<1.0），低收入群体仍偏少。建议提高‘再分配’或‘提升 <1万支援’。", ai_tradeoff:"HBR 降至 {hbr}、公平改善，但提升低收入支援吃掉了节省（仅 {save}）。建议适度提高封顶或限期房来对冲，或接受这是‘惠民优先’的取舍。", ai_win:"节省 {save}（占预算 {pct}%）同时 Fairness Gap 达 {fg}，公平与节流双赢，建议组装决策包并上报。", ai_neutral:"当前情景：节省 {save}、Fairness Gap {fg}、HBR {hbr}。可继续微调或上报。", ai_minister:"再分配超过 20%，按规则需上报部长裁决。" });
 Object.assign(I18N.ar,{ askAI:"Ask AI", runLevers:"التشغيل بالروافع الحالية", ai_title:"تقييم الذكاء الاصطناعي", ai_start:"حرّك الروافع أو استخدم Ask AI لبدء المحاكاة — سأقيّم المفاضلات.", ai_fairlow:"فجوة العدالة لا تزال {fg} (<١٫٠) — الشريحة منخفضة الدخل ما زالت غير مخدومة. أنصح برفع ‘إعادة التوزيع’ أو ‘رفع دعم <١٠ك’.", ai_tradeoff:"يتحسّن HBR إلى {hbr} وترتفع العدالة، لكن رفع دعم منخفضي الدخل يستهلك الوفورات (فقط {save}). أنصح بتعويض ذلك برفع التقييد، أو قبولها كمفاضلة ‘الأولوية للناس’.", ai_win:"وفورات {save} ({pct}٪ من الميزانية) مع فجوة عدالة {fg} — تتحسّن العدالة والوفورات معاً. أنصح بتجميع حزمة القرار ورفعها.", ai_neutral:"السيناريو الحالي: وفورات {save}، فجوة العدالة {fg}، HBR {hbr}. يمكنك الضبط الدقيق أو الرفع.", ai_minister:"تتجاوز إعادة التوزيع ٢٠٪ — يتطلب ذلك بتّ الوزير." });
