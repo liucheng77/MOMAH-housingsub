@@ -993,6 +993,9 @@ const NAV = {
 };
 // Release timestamps are in Saudi Arabia Standard Time (AST, UTC+3).
 const RELEASES=[
+  {ver:"v1.10", date:"2026-06-24 13:34",
+    en:["Dashboard: 4 operational KPIs added (Contract Coverage, Monthly Budget Used, Projected Annual Spend, Contract Target)"],
+    zh:["仪表盘:新增 4 个运营 KPI(签约覆盖率、当月预算使用、预测全年支出、年度签约达成)"]},
   {ver:"v1.9", date:"2026-06-24 13:20",
     en:["Subsidy Formula: live parameter controls (sliders/dropdown) + preview table + Activate/Rollback","Forecast: seasonal curve + 3-month OLS forecast with ±12% CI, 70/90 alert lines, Monthly/Cumulative toggle","Allocation: structured detail (How / Why / Impact), clearer vs-last-month, annotation"],
     zh:["补贴公式:实时参数控件(滑块/下拉)+ 预览表 + 激活/回滚","预测:季节性曲线 + 3 月 OLS 预测(±12% 置信)、70/90 警戒线、月/累计切换","配分:结构化展开(如何算/为何/影响)、环比说清、加注释"]},
@@ -1098,6 +1101,12 @@ function AnalystHome(){
         <StackedBar segments={[{v:54,c:"var(--green)"},{v:22,c:"#5aa6e0"},{v:13,c:"#f0a91e"}]} marks={[70,90]} total={100}/></MegaKpi>
     </div>
     {kd&&<KpiDetailModal kpi={kd} onClose={()=>setKd(null)}/>}
+    <div className="cols-4" style={{marginBottom:16}}>
+      <KPI label={t("kpi_coverage")} value="82%" sub="6,950 / 8,500" tone="warn"/>
+      <KPI label={t("kpi_mbudget")} value="⃁ 121M" sub={"92% "+t("of_monthly")} tone="warn"/>
+      <KPI label={t("kpi_projAnnual")} value="⃁ 1.49B" sub={"94% "+t("of_ceiling")} tone="warn"/>
+      <KPI label={t("kpi_target")} value="90%" sub="332K / 367K" tone="good"/>
+    </div>
     <AIInsights/>
     <Section title={t("quickActions")}>
       <div className="cols-4">
@@ -2740,9 +2749,12 @@ function MegaKpi({title,value,delta,children,onClick}){
     {onClick?<div className="kpi-more">{t("viewTrend")} ↗</div>:null}
   </div>);
 }
-Object.assign(I18N.en,{ kpi_ownership:"Home Ownership", dl_title:"Data lineage & gate", dl_go:"GO — ready for downstream", dl_hold:"HOLD — completeness below 90%", dl_opt:"Optimization", dl_fc:"Forecast", dl_track:"Tracking" });
-Object.assign(I18N.zh,{ kpi_ownership:"住房拥有率", dl_title:"数据血缘与门控", dl_go:"GO —— 可供下游使用", dl_hold:"HOLD —— 完整度低于 90%", dl_opt:"优化", dl_fc:"预测", dl_track:"追踪" });
-Object.assign(I18N.ar,{ kpi_ownership:"نسبة التملّك", dl_title:"سلالة البيانات والبوابة", dl_go:"GO — جاهز للمراحل التالية", dl_hold:"HOLD — الاكتمال دون ٩٠٪", dl_opt:"التحسين", dl_fc:"التنبؤ", dl_track:"التتبّع" });
+Object.assign(I18N.en,{ kpi_ownership:"Home Ownership", dl_title:"Data lineage & gate", dl_go:"GO — ready for downstream", dl_hold:"HOLD — completeness below 90%", dl_opt:"Optimization", dl_fc:"Forecast", dl_track:"Tracking",
+  kpi_coverage:"Contract Coverage", kpi_mbudget:"Monthly Budget Used", kpi_projAnnual:"Projected Annual Spend", kpi_target:"Contract Target", of_monthly:"of monthly avg", of_ceiling:"of ceiling" });
+Object.assign(I18N.zh,{ kpi_ownership:"住房拥有率", dl_title:"数据血缘与门控", dl_go:"GO —— 可供下游使用", dl_hold:"HOLD —— 完整度低于 90%", dl_opt:"优化", dl_fc:"预测", dl_track:"追踪",
+  kpi_coverage:"签约覆盖率", kpi_mbudget:"当月预算使用", kpi_projAnnual:"预测全年支出", kpi_target:"年度签约达成", of_monthly:"占月均", of_ceiling:"占上限" });
+Object.assign(I18N.ar,{ kpi_ownership:"نسبة التملّك", dl_title:"سلالة البيانات والبوابة", dl_go:"GO — جاهز للمراحل التالية", dl_hold:"HOLD — الاكتمال دون ٩٠٪", dl_opt:"التحسين", dl_fc:"التنبؤ", dl_track:"التتبّع",
+  kpi_coverage:"تغطية العقود", kpi_mbudget:"استخدام ميزانية الشهر", kpi_projAnnual:"الإنفاق السنوي المتوقع", kpi_target:"تحقيق هدف العقود", of_monthly:"من المتوسط الشهري", of_ceiling:"من السقف" });
 
 function App(){
   const [user,setUserState]=useState(null);
