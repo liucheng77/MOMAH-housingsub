@@ -84,6 +84,22 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .rel-item{position:relative;padding-inline-start:22px;padding-bottom:18px;border-inline-start:2px solid var(--line)}
 .rel-item:last-child{border-color:transparent;padding-bottom:2px}
 .rel-mtitle{display:inline-flex;align-items:center;gap:8px}
+.agent-tile{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.agent-tile .at-head{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.agent-tile .at-head .ic-gear{filter:none}
+.agent-tile .at-foot{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:var(--green-dark);font-weight:600}
+.agent-tile .ag-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-100)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:none}
+.fml-eq{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;color:var(--green-dark);background:var(--green-50);border:1px solid var(--green-100);border-radius:10px;padding:12px 14px;line-height:1.6}
+.insight-card{border:1px solid var(--line);border-inline-start:4px solid #6d5ae6;border-radius:12px;padding:14px;background:linear-gradient(180deg,#faf9ff,#f6f4fe)}
+.insight-card.good{border-inline-start-color:var(--green);background:linear-gradient(180deg,#f4fcf7,#eefaf2)}
+.insight-card.warn{border-inline-start-color:var(--amber);background:linear-gradient(180deg,#fffaf0,#fff6e6)}
+.insight-card .ic-h{font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--ink)}
+.insight-card .ic-t{font-size:12.5px;line-height:1.65;color:var(--muted);margin-bottom:10px}
+.insight-card .ic-r{font-size:12.5px;line-height:1.6;font-weight:600;color:#5a4ad1}
+.insight-card.good .ic-r{color:var(--green-dark)}
+.insight-card.warn .ic-r{color:#9a6a06}
 .rel-dot{position:absolute;inset-inline-start:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff;box-shadow:0 0 0 1px var(--green-100)}
 .rel-item.cur .rel-dot{box-shadow:0 0 0 3px var(--green-100)}
 .rel-head{margin-bottom:6px}

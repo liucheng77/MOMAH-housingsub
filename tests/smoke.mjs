@@ -61,6 +61,7 @@ const harness = `
     ["WhatIf","analyst",WhatIf],["DecisionPackages","analyst",DecisionPackages],["AuditTrailPage","analyst",AuditTrailPage],
     ["CopilotHandoff","analyst",CopilotHandoff],["BeneficiaryTracking","analyst",BeneficiaryTracking],["Benchmarking","analyst",Benchmarking],
     ["MortgagePlanning","analyst",MortgagePlanning],["InventoryAbsorption","analyst",InventoryAbsorption],["ImpactAttribution","analyst",ImpactAttribution],
+    ["SettingsPage","analyst",SettingsPage],["FormulaPage","analyst",FormulaPage],["AIInsights","analyst",AIInsights],["AgentArchitecture","analyst",AgentArchitecture],
     ["TopBar","analyst",TopBar],["Sidebar","analyst",Sidebar]];
   let ok=0, fail=0;
   for(const lang of ["en","ar"]){

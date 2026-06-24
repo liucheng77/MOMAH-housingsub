@@ -95,6 +95,22 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .rel-item{position:relative;padding-inline-start:22px;padding-bottom:18px;border-inline-start:2px solid var(--line)}
 .rel-item:last-child{border-color:transparent;padding-bottom:2px}
 .rel-mtitle{display:inline-flex;align-items:center;gap:8px}
+.agent-tile{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.agent-tile .at-head{display:flex;align-items:center;gap:8px;font-size:13.5px}
+.agent-tile .at-head .ic-gear{filter:none}
+.agent-tile .at-foot{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:var(--green-dark);font-weight:600}
+.agent-tile .ag-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px var(--green-100)}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.set-row:last-child{border-bottom:none}
+.fml-eq{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;color:var(--green-dark);background:var(--green-50);border:1px solid var(--green-100);border-radius:10px;padding:12px 14px;line-height:1.6}
+.insight-card{border:1px solid var(--line);border-inline-start:4px solid #6d5ae6;border-radius:12px;padding:14px;background:linear-gradient(180deg,#faf9ff,#f6f4fe)}
+.insight-card.good{border-inline-start-color:var(--green);background:linear-gradient(180deg,#f4fcf7,#eefaf2)}
+.insight-card.warn{border-inline-start-color:var(--amber);background:linear-gradient(180deg,#fffaf0,#fff6e6)}
+.insight-card .ic-h{font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--ink)}
+.insight-card .ic-t{font-size:12.5px;line-height:1.65;color:var(--muted);margin-bottom:10px}
+.insight-card .ic-r{font-size:12.5px;line-height:1.6;font-weight:600;color:#5a4ad1}
+.insight-card.good .ic-r{color:var(--green-dark)}
+.insight-card.warn .ic-r{color:#9a6a06}
 .rel-dot{position:absolute;inset-inline-start:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff;box-shadow:0 0 0 1px var(--green-100)}
 .rel-item.cur .rel-dot{box-shadow:0 0 0 3px var(--green-100)}
 .rel-head{margin-bottom:6px}
@@ -927,15 +943,18 @@ function TopBar(){
 }
 
 const NAV = {
-  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_mortgage","🏦"],["nav_forecast","📈"],["nav_referrals","👥"],["nav_impact","🔎"],["nav_whatif","✦"],["nav_packages","📦"],["nav_inventory","🏘"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_copilot","🤝"]],
-  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
-  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"]],
+  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_formula","∑"],["nav_alloc","▦"],["nav_mortgage","🏦"],["nav_forecast","📈"],["nav_referrals","👥"],["nav_impact","🔎"],["nav_whatif","✦"],["nav_packages","📦"],["nav_inventory","🏘"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_copilot","🤝"],["nav_agents","🧠"],["nav_settings","⚙"]],
+  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🧠"],["nav_settings","⚙"]],
+  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🧠"],["nav_settings","⚙"]],
 };
 // Release timestamps are in Saudi Arabia Standard Time (AST, UTC+3).
 const RELEASES=[
+  {ver:"v1.5", date:"2026-06-24 10:46",
+    en:["Settings center and Subsidy Formula pages added","Agent Architecture overview (L1/L2/L3 + scope)","AI insight cards on the dashboard; What-if sandbox notice + scenario type","Fairness drill-down by region / income / loan term / age"],
+    zh:["新增设置中心与补贴公式页","智能体架构总览(L1/L2/L3 + 职责)","首页 AI 洞察卡片;What-if 沙箱声明 + 情景类型","公平性多维下钻:地区 / 收入 / 贷款期限 / 年龄"]},
   {ver:"v1.4", date:"2026-06-21 10:08",
-    en:["UC-05/11/12/13/14 pages — full BRD use-case coverage","Data-flow funnel on Data Readiness (6 sources → BIDSC)","Internal UC codes removed from the UI","Login title fixed to MoMAH"],
-    zh:["新增 UC-05/11/12/13/14 五页 —— BRD 用例全覆盖","Data Readiness 数据流向漏斗(6 源 → BIDSC)","移除界面中的 UC 编号","登录标题修正为 MoMAH"]},
+    en:["Beneficiary tracking, support-type optimizer, benchmarking, inventory & policy-impact pages — full BRD coverage","Data-flow funnel on Data Readiness (6 sources → BIDSC)","Internal use-case codes removed from the UI","Login title fixed to MoMAH"],
+    zh:["新增受益人追踪、补贴类型优选、国际对标、库存去化、政策影响等页 —— BRD 全覆盖","Data Readiness 数据流向漏斗(6 源 → BIDSC)","移除界面中的用例编号","登录标题修正为 MoMAH"]},
   {ver:"v1.3", date:"2026-06-20 18:30",
     en:["What-if AI assessment bubble + Apply AI suggestion","Orchestration nodes: progress-fill, agent-purple","Startup crash fixed (classic JSX runtime)"],
     zh:["What-if AI 评估气泡 + 应用 AI 建议","编排节点:进度条填充、agent 紫色","启动崩溃修复(经典 JSX runtime)"]},
@@ -1017,6 +1036,7 @@ function AnalystHome(){
       <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} sub={t("toTarget")} tone="warn"/>
       <KPI label={t("kpi_budget")} value={(BASELINE.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)+"%"} sub={t("baseline")} />
     </div>
+    <AIInsights/>
     <Section title={t("quickActions")}>
       <div className="cols-4">
         {quick.map(([k,ic,r])=>(<button key={k} className="role-opt" onClick={()=>setRoute(r)}>
@@ -1236,6 +1256,7 @@ function Allocation(){
             <div style={{fontSize:12.5}}>
               <strong>{t("impact")}:</strong> {bandLabel(t,r.key)} — {r.below?t("below10k"):t("above10k")} · {t("subsidy")} {moneyFull(r.subsidy)} · {t("share")} {(r.cShare*100).toFixed(1)}% · HBR {pct1(r.hbr)}.
               <div className="muted" style={{marginTop:4}}>Within the approved policy matrix · contributes to Fairness Gap {BASELINE.FG.toFixed(2)}.</div>
+              <div className="muted" style={{marginTop:4,display:"flex",alignItems:"center",gap:6}}><AgentBadge name={t("agent_alloc")} lvl="L2"/></div>
             </div></td></tr>}
         </React.Fragment>))}</tbody>
       </table></div>
@@ -1248,6 +1269,14 @@ function ForecastFairness(){
   const {t,user,leaks,leakAct}=useStore(); const {money}=useMoney();
   const scn=BASELINE; const fc=useMemo(()=>buildForecast(scn),[]);
   const regions=useMemo(()=>fgByRegion(scn.FG),[]);
+  const [dim,setDim]=useState("region");
+  const dimData={
+    region: regions.map(r=>({name:t("rg_"+r.key),fg:r.fg})),
+    income: [["<5k",0.51],["5–10k",0.72],["10–15k",1.02],["15–20k",1.18],[">20k",1.25]].map(([n,f])=>({name:n,fg:f})),
+    loan: [["<15y",0.83],["15–20y",0.96],["20–25y",1.08],[">25y",1.14]].map(([n,f])=>({name:n,fg:f})),
+    age: [["<30",0.74],["30–40",0.91],["40–50",1.05],[">50",1.16]].map(([n,f])=>({name:n,fg:f})),
+  };
+  const fgData=dimData[dim];
   const C=RC; const ok=!!RC.ResponsiveContainer;
   const noChart=<div className="muted" style={{padding:20}}>Chart library unavailable (offline). Data is still computed correctly.</div>;
   return (<div className="fade">
@@ -1276,17 +1305,21 @@ function ForecastFairness(){
       </div>
     </Section>
     <Section title={<span className="sect-right">{t("fairnessByRegion")}<InfoTip text={t("fml_fg")}/></span>} right={<AgentBadge name={t("agent_fair")} lvl="L3"/>}>
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+        {[["region","fgdim_region"],["income","fgdim_income"],["loan","fgdim_loan"],["age","fgdim_age"]].map(([k,lk])=>(
+          <button key={k} className={"btn sm "+(dim===k?"":"secondary")} onClick={()=>setDim(k)}>{t(lk)}</button>))}
+      </div>
       <div style={{width:"100%",height:300}}>
         {!ok? noChart :
         <C.ResponsiveContainer>
-          <C.BarChart data={regions.map(r=>({name:t("rg_"+r.key),fg:r.fg}))} margin={{top:4,right:8,left:0,bottom:4}}>
+          <C.BarChart data={fgData} margin={{top:4,right:8,left:0,bottom:4}}>
             <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
             <C.XAxis dataKey="name" tick={{fontSize:10}} interval={0} angle={-30} textAnchor="end" height={64}/>
             <C.YAxis tick={{fontSize:11}} domain={[0,1.4]}/>
             <C.Tooltip/>
             <C.ReferenceLine y={1.0} stroke="#006C35" strokeDasharray="4 4"/>
             <C.Bar dataKey="fg" radius={[3,3,0,0]}>
-              {regions.map((r,i)=><C.Cell key={i} fill={r.fg>=1?"#006C35":r.fg>=0.9?"#9a6b00":"#b3261e"}/>)}
+              {fgData.map((r,i)=><C.Cell key={i} fill={r.fg>=1?"#006C35":r.fg>=0.9?"#9a6b00":"#b3261e"}/>)}
             </C.Bar>
           </C.BarChart>
         </C.ResponsiveContainer>}
@@ -1411,6 +1444,7 @@ function WhatIf(){
   const {t,setRoute,addPackage,user}=useStore(); const {money}=useMoney();
   const [p,setP]=useState({reallocatePct:0,capHighPct:0,boostLowPct:0,offPlanPct:0});
   const [nl,setNl]=useState("");
+  const [scenType,setScenType]=useState("tactical");
   const [chain,setChain]=useState(["idle","idle","idle","idle"]);
   const [busy,setBusy]=useState(false);
   const [flash,setFlash]=useState(false);
@@ -1471,6 +1505,14 @@ function WhatIf(){
   const saveOver=sv.phase>SAVINGS_CEIL;
   return (<div className="fade">
     <PageHeader title={t("nav_whatif")} sub={t("whatif_sub")}/>
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+      <span className="banner" style={{flex:1,margin:0,minWidth:240}}>🧪 {t("whatif_sandbox")}</span>
+      <select className="input" style={{width:"auto"}} value={scenType} onChange={e=>setScenType(e.target.value)}>
+        <option value="tactical">{t("st_tactical")}</option>
+        <option value="strategic">{t("st_strategic")}</option>
+        <option value="macro">{t("st_macro")}</option>
+      </select>
+    </div>
     <Section title={t("orchestration")} right={<AgentBadge name={t("agent_orch")}/>}>
       <div style={{display:"flex",gap:8,marginBottom:12}}>
         <input className="input" style={{flex:1}} placeholder={t("nlPlaceholder")} value={nl} onChange={e=>setNl(e.target.value)}/>
@@ -2226,6 +2268,167 @@ Object.assign(I18N.ar,{ nav_mortgage:"مُحسِّن نوع الدعم", nav_inv
   ia_outputs:"توجيه تقرير الأثر", ia_feedWhatif:"تغذية What-if بالأثر الفعلي", ia_uc06:"تحديث إعادة التوزيع", ia_uc07:"التصعيد عبر توجيه القرار",
   ia_doneUc06:"تم تحديث توصية إعادة التوزيع بنتائج العزل", ia_doneUc07:"تم توجيه تقرير الأثر إلى توجيه القرار" });
 
+/* ===== Agent architecture overview (UC-SYS-01) ===== */
+const AGENT_ARCH=[
+  {k:"agent_data", lvl:"L1", scope:"aa_data"},
+  {k:"agent_track", lvl:"L1", scope:"aa_track"},
+  {k:"agent_alloc", lvl:"L2", scope:"aa_alloc"},
+  {k:"agent_forecast", lvl:"L2", scope:"aa_forecast"},
+  {k:"agent_realloc", lvl:"L2", scope:"aa_realloc"},
+  {k:"agent_fair", lvl:"L3", scope:"aa_fair"},
+  {k:"agent_route", lvl:"L3", scope:"aa_route"},
+  {k:"agent_orch", lvl:"L3", scope:"aa_orch"},
+];
+function AgentArchitecture(){
+  const {t}=useStore();
+  return (<div className="fade">
+    <PageHeader title={t("nav_agents")} sub={t("aa_sub")} right={<AgentBadge name={t("agent_orch")}/>}/>
+    <div className="banner" style={{marginBottom:14}}>● {t("aa_note")}</div>
+    {["L1","L2","L3"].map(lv=>(<Section key={lv} title={t("aa_"+lv)} sub={t("aa_"+lv+"_d")}>
+      <div className="cols-2">
+        {AGENT_ARCH.filter(a=>a.lvl===lv).map(a=>(<div key={a.k} className="agent-tile">
+          <div className="at-head">{GearIcon}<strong>{t(a.k)}</strong><span className="chip gray" style={{marginInlineStart:"auto"}}>{a.lvl}</span></div>
+          <div className="muted" style={{fontSize:12.5,lineHeight:1.65,marginTop:8}}>{t(a.scope)}</div>
+          <div className="at-foot"><span className="ag-dot"/> {t("agent_auto")}</div>
+        </div>))}
+      </div>
+    </Section>))}
+  </div>);
+}
+Object.assign(I18N.en,{ nav_agents:"Agent Architecture",
+  aa_sub:"The multi-agent system behind the platform — levels, scope and coordination", aa_note:"All agents run automatically; every decision stays human-in-the-loop",
+  aa_L1:"L1 · Data agents", aa_L1_d:"Ingestion and beneficiary tracking", aa_L2:"L2 · Optimization agents", aa_L2_d:"Computation, forecasting and rebalancing", aa_L3:"L3 · Governance & orchestration", aa_L3_d:"Fairness, routing and coordination",
+  aa_data:"Ingests and validates the six source systems into BIDSC; flags exceptions.", aa_track:"Monitors beneficiary improvement and generates referral lists — never auto-terminates support.",
+  aa_alloc:"Computes the subsidy formula, the distribution plan and the optimal support type per beneficiary.", aa_forecast:"Projects 12-month spend and raises early/critical budget alerts.",
+  aa_realloc:"Rebalancing assessment, inventory absorption and policy/market impact attribution.", aa_fair:"Computes the multi-dimensional Fairness Gap and detects leakage.",
+  aa_route:"Routes decisions through the audit trail and delivers approved outputs to Housing Copilot.", aa_orch:"Coordinates all agents and runs What-if simulations on demand.",
+  st_tactical:"Tactical sandbox", st_strategic:"Strategic sandbox", st_macro:"Macro-policy sandbox",
+  fgdim_region:"Region", fgdim_income:"Income band", fgdim_loan:"Loan term", fgdim_age:"Age group" });
+Object.assign(I18N.zh,{ nav_agents:"智能体架构",
+  aa_sub:"平台背后的多智能体系统 —— 层级、职责与协同", aa_note:"所有智能体自动运行;每个决策都保留人工把关",
+  aa_L1:"L1 · 数据智能体", aa_L1_d:"数据接入与受益人追踪", aa_L2:"L2 · 优化智能体", aa_L2_d:"计算、预测与再平衡", aa_L3:"L3 · 治理与编排", aa_L3_d:"公平、路由与协同",
+  aa_data:"将六套源系统接入并校验入 BIDSC;标记异常。", aa_track:"监测受益人改善并生成转复核名单 —— 永不自动停补。",
+  aa_alloc:"计算补贴公式、配分方案及每位受益人的最优支援类型。", aa_forecast:"预测 12 个月支出并发出早期/严重预算预警。",
+  aa_realloc:"再平衡评估、库存去化与政策/市场影响归因。", aa_fair:"计算多维公平差距并检测漏损。",
+  aa_route:"通过审计追踪路由决策,并把已批准结果交付 Housing Copilot。", aa_orch:"协调所有智能体,并按需运行 What-if 推演。",
+  st_tactical:"战术沙箱", st_strategic:"战略沙箱", st_macro:"宏观政策沙箱",
+  fgdim_region:"地区", fgdim_income:"收入档", fgdim_loan:"贷款期限", fgdim_age:"年龄段" });
+Object.assign(I18N.ar,{ nav_agents:"بنية الوكلاء",
+  aa_sub:"نظام الوكلاء المتعدد خلف المنصة — المستويات والنطاق والتنسيق", aa_note:"تعمل جميع الوكلاء آلياً؛ يبقى كل قرار بإشراف بشري",
+  aa_L1:"L1 · وكلاء البيانات", aa_L1_d:"الاستيعاب وتتبع المستفيدين", aa_L2:"L2 · وكلاء التحسين", aa_L2_d:"الحساب والتنبؤ وإعادة التوازن", aa_L3:"L3 · الحوكمة والتنسيق", aa_L3_d:"العدالة والتوجيه والتنسيق",
+  aa_data:"يستوعب ويتحقق من الأنظمة المصدر الستة في BIDSC؛ يضع علامة على الاستثناءات.", aa_track:"يراقب تحسّن المستفيدين ويولّد قوائم الإحالة — لا يوقف الدعم تلقائياً أبداً.",
+  aa_alloc:"يحسب صيغة الدعم وخطة التوزيع ونوع الدعم الأمثل لكل مستفيد.", aa_forecast:"يتوقّع إنفاق ١٢ شهراً ويصدر تنبيهات ميزانية مبكرة/حرجة.",
+  aa_realloc:"تقييم إعادة التوازن واستيعاب المخزون وعزل أثر السياسات/السوق.", aa_fair:"يحسب فجوة العدالة متعددة الأبعاد ويكشف التسرب.",
+  aa_route:"يوجّه القرارات عبر سجل التدقيق ويسلّم المخرجات المعتمدة إلى مساعد الإسكان.", aa_orch:"ينسّق جميع الوكلاء ويشغّل محاكاة What-if عند الطلب.",
+  st_tactical:"بيئة تكتيكية", st_strategic:"بيئة استراتيجية", st_macro:"بيئة سياسات كلية",
+  fgdim_region:"المنطقة", fgdim_income:"شريحة الدخل", fgdim_loan:"مدة القرض", fgdim_age:"الفئة العمرية" });
+
+/* ===== UC-00 Central Settings ===== */
+const SETTINGS_GROUPS=[
+  {g:"set_g_dq", at:"2026-06-16 10:44", items:[{k:"set_minComplete",v:90,unit:"%",hint:"0–100"}]},
+  {g:"set_g_budget", at:"2026-06-15 10:09", items:[{k:"set_earlyAlert",v:70,unit:"%",hint:"0–100"},{k:"set_critAlert",v:90,unit:"%",hint:"> early"}]},
+  {g:"set_g_budgetC", at:"2026-06-15 10:09", items:[{k:"set_annual",v:1580,unit:"M",hint:">0"},{k:"set_eligible",v:1400000,unit:"",hint:">0"}]},
+  {g:"set_g_esc", at:"2026-06-15 10:09", items:[{k:"set_minThresh",v:20,unit:"%",hint:"→ Minister"},{k:"set_boTime",v:48,unit:"h",hint:">0"},{k:"set_minTime",v:72,unit:"h",hint:"> BO"}]},
+  {g:"set_g_fair", at:"2026-06-15 10:09", items:[{k:"set_fgMin",v:1.0,unit:"",hint:"min 0"}]},
+  {g:"set_g_hbr", at:"2026-06-15 10:09", items:[{k:"set_hbrCeil",v:38,unit:"%",hint:"30–50"}]},
+  {g:"set_g_mon", at:"2026-06-15 10:09", items:[{k:"set_demandChg",v:15,unit:"%",hint:"0–100"},{k:"set_improveDur",v:3,unit:"mo",hint:"1–12"}]},
+];
+function SettingsPage(){
+  const {t,user}=useStore(); const editable=user!=="minister";
+  const [vals,setVals]=useState(()=>{ const o={}; SETTINGS_GROUPS.forEach(g=>g.items.forEach(it=>o[it.k]=it.v)); return o; });
+  const [saved,setSaved]=useState(false);
+  return (<div className="fade">
+    <PageHeader title={t("nav_settings")} sub={t("set_sub")} right={editable?<button className="btn sm" onClick={()=>setSaved(true)}>💾 {t("set_save")}</button>:<span className="chip gray">{t("set_readonly")}</span>}/>
+    {saved&&<div className="banner" style={{marginBottom:14}}>✓ {t("set_saved")}</div>}
+    <div className="banner" style={{marginBottom:14}}>● {t("set_note")}</div>
+    <div className="cols-2">
+      {SETTINGS_GROUPS.map(grp=>(<Section key={grp.g} title={t(grp.g)} sub={t("set_lastMod")+": "+grp.at}>
+        {grp.items.map(it=>(<div key={it.k} className="set-row">
+          <div><div style={{fontWeight:600,fontSize:13.5}}>{t(it.k)}</div><div className="muted" style={{fontSize:11.5}}>{it.hint}{it.unit?(" · "+it.unit):""}</div></div>
+          <input className="input mono" style={{width:120,textAlign:"end"}} type="number" value={vals[it.k]} disabled={!editable}
+            onChange={e=>{setVals({...vals,[it.k]:e.target.value}); setSaved(false);}}/>
+        </div>))}
+      </Section>))}
+    </div>
+  </div>);
+}
+
+/* ===== UC-01 Subsidy Formula ===== */
+const FORMULAS=[
+  {k:"fml_hbr", title:"f_hbr", ex:"f_hbrEx"},
+  {k:"fml_alloc", title:"f_alloc", ex:"f_allocEx"},
+  {k:"fml_fg", title:"f_fg", ex:"f_fgEx"},
+  {k:"fml_savings", title:"f_sav", ex:"f_savEx"},
+];
+function FormulaPage(){
+  const {t}=useStore();
+  return (<div className="fade">
+    <PageHeader title={t("nav_formula")} sub={t("f_sub")} right={<AgentBadge name={t("agent_alloc")} lvl="L2"/>}/>
+    <div className="banner" style={{marginBottom:14}}>● {t("f_note")}</div>
+    {FORMULAS.map(f=>(<Section key={f.k} title={t(f.title)}>
+      <div className="fml-eq">{t(f.k)}</div>
+      <div className="muted" style={{fontSize:13,marginTop:10,lineHeight:1.7}}><b>{t("f_example")}:</b> {t(f.ex)}</div>
+    </Section>))}
+  </div>);
+}
+
+/* ===== AI insights (dashboard) ===== */
+const INSIGHTS=[{k:"ins_tenure",tone:"info"},{k:"ins_fiscal",tone:"good"},{k:"ins_fair",tone:"warn"}];
+function AIInsights(){
+  const {t}=useStore();
+  return (<Section title={<span className="sect-right">✦ {t("ins_title")}</span>} sub={t("ins_sub")}>
+    <div className="cols-3">
+      {INSIGHTS.map(i=>(<div key={i.k} className={"insight-card "+i.tone}>
+        <div className="ic-h">{t(i.k+"_h")}</div>
+        <div className="ic-t">{t(i.k+"_t")}</div>
+        <div className="ic-r">✦ {t(i.k+"_r")}</div>
+      </div>))}
+    </div>
+  </Section>);
+}
+Object.assign(I18N.en,{ nav_settings:"Settings", nav_formula:"Subsidy Formula",
+  set_sub:"Central configuration — all thresholds and operating parameters", set_save:"Save changes", set_saved:"Settings saved", set_readonly:"Read-only", set_note:"Changing critical thresholds requires Business Owner approval", set_lastMod:"Last modified",
+  set_g_dq:"Data quality", set_g_budget:"Budget thresholds", set_g_budgetC:"Budget constants", set_g_esc:"Escalation & time limits", set_g_fair:"Fairness gap", set_g_hbr:"Housing burden (HBR)", set_g_mon:"Monitoring thresholds",
+  set_minComplete:"Minimum data completeness", set_earlyAlert:"Early budget alert", set_critAlert:"Critical budget alert", set_annual:"Annual budget (SAR M)", set_eligible:"Total eligible population", set_minThresh:"Ministerial escalation (redistribution)", set_boTime:"Business Owner response time", set_minTime:"Minister escalation deadline", set_fgMin:"Fairness Gap minimum acceptable", set_hbrCeil:"HBR ceiling", set_demandChg:"Significant change in demand", set_improveDur:"Improvement duration for HBR",
+  f_sub:"The formulas behind the engine — with worked examples", f_note:"All figures anchored to BRD V0.5.1", f_example:"Example",
+  f_hbr:"Housing Burden Ratio (HBR)", f_hbrEx:"Net income SAR 12,000/mo, housing cost SAR 4,860/mo → 4,860 ÷ 12,000 = 40.5%",
+  f_alloc:"Per-band support", f_allocEx:"Disposable income SAR 6,000 × 40% deduction = SAR 2,400 max housing cost; monthly support = actual − optimal interest",
+  f_fg:"Fairness Gap", f_fgEx:"<10k group receives 36% of subsidy but is 62% of beneficiaries → 0.36 ÷ 0.62 = 0.58 (<1.0, under-served)",
+  f_sav:"5-year savings", f_savEx:"Current-matrix spend − optimized scenario spend over the phase = SAR 1.37–3.4B",
+  ins_title:"AI insights", ins_sub:"Natural-language reading of the current state",
+  ins_tenure_h:"Structural tenure shift", ins_tenure_t:"Rent inflation 8–10% far outpaces wage growth 4–5%, while purchase prices stay in low single digits.", ins_tenure_r:"Shift budget toward purchase subsidies to move citizens out of the volatile rental market.",
+  ins_fiscal_h:"Fiscal runway", ins_fiscal_t:"Projected annual spend tracks to ~76%, leaving ~24% (SAR 384M) of budget headroom.", ins_fiscal_r:"Use this headroom for strategic reallocation toward high-need applicants.",
+  ins_fair_h:"Fairness gap", ins_fair_t:"FG 0.58 with HBR 40.5% signals misallocation — support isn't reaching the most vulnerable.", ins_fair_r:"Recalibrate the subsidy matrix to raise precision for high-vulnerability segments.",
+  whatif_sandbox:"Sandbox-isolated — simulations never touch live allocations or budgets." });
+Object.assign(I18N.zh,{ nav_settings:"设置", nav_formula:"补贴公式",
+  set_sub:"中央配置 —— 所有阈值与运行参数", set_save:"保存修改", set_saved:"设置已保存", set_readonly:"只读", set_note:"修改关键阈值需业务负责人审批", set_lastMod:"最近修改",
+  set_g_dq:"数据质量", set_g_budget:"预算阈值", set_g_budgetC:"预算常量", set_g_esc:"升级与时限", set_g_fair:"公平性差距", set_g_hbr:"住房负担 (HBR)", set_g_mon:"监测阈值",
+  set_minComplete:"最低数据完整度", set_earlyAlert:"预算预警(早期)", set_critAlert:"预算预警(严重)", set_annual:"年度预算 (SAR M)", set_eligible:"合格总人口", set_minThresh:"部长升级阈值(再分配)", set_boTime:"业务负责人响应时限", set_minTime:"部长升级截止", set_fgMin:"公平差距最低可接受", set_hbrCeil:"HBR 上限", set_demandChg:"需求显著变化", set_improveDur:"HBR 改善持续",
+  f_sub:"引擎背后的公式 —— 附算例", f_note:"数据均锚定 BRD V0.5.1", f_example:"算例",
+  f_hbr:"住房负担比 (HBR)", f_hbrEx:"净收入 12,000/月,住房成本 4,860/月 → 4,860 ÷ 12,000 = 40.5%",
+  f_alloc:"分档支援", f_allocEx:"可支配收入 6,000 × 40% 扣减 = 2,400 最高住房成本;月度支援 = 实际 − 最优利息",
+  f_fg:"公平性差距", f_fgEx:"<1万群体获 36% 支援,却占 62% 受益人 → 0.36 ÷ 0.62 = 0.58(<1.0,偏少)",
+  f_sav:"5 年节省", f_savEx:"现行矩阵支出 − 优化情景支出(整个阶段)= SAR 13.7–34 亿",
+  ins_title:"AI 洞察", ins_sub:"对当前态势的自然语言解读",
+  ins_tenure_h:"结构性租购转变", ins_tenure_t:"租金通胀 8–10% 远超工资增长 4–5%,而购房价格仍处低个位数。", ins_tenure_r:"建议将预算转向购房补贴,把公民从动荡的租赁市场转移出来。",
+  ins_fiscal_h:"财政空间", ins_fiscal_t:"预计年度支出约 76%,剩余约 24%(SAR 3.84 亿)预算空间。", ins_fiscal_r:"利用该空间向高需求申请者做战略再分配。",
+  ins_fair_h:"公平差距", ins_fair_t:"FG 0.58 叠加 HBR 40.5%,显示资金配置不佳 —— 支援未触达最脆弱群体。", ins_fair_r:"校准补贴矩阵,提高对高脆弱性群体的精准度。",
+  whatif_sandbox:"沙箱隔离 —— 推演绝不影响线上配分或预算。" });
+Object.assign(I18N.ar,{ nav_settings:"الإعدادات", nav_formula:"صيغة الدعم",
+  set_sub:"التهيئة المركزية — جميع العتبات ومعاملات التشغيل", set_save:"حفظ التغييرات", set_saved:"تم حفظ الإعدادات", set_readonly:"للقراءة فقط", set_note:"تغيير العتبات الحرجة يتطلب موافقة مالك الأعمال", set_lastMod:"آخر تعديل",
+  set_g_dq:"جودة البيانات", set_g_budget:"عتبات الميزانية", set_g_budgetC:"ثوابت الميزانية", set_g_esc:"التصعيد والمهل", set_g_fair:"فجوة العدالة", set_g_hbr:"عبء السكن (HBR)", set_g_mon:"عتبات المراقبة",
+  set_minComplete:"الحد الأدنى لاكتمال البيانات", set_earlyAlert:"تنبيه ميزانية مبكر", set_critAlert:"تنبيه ميزانية حرج", set_annual:"الميزانية السنوية (SAR M)", set_eligible:"إجمالي السكان المؤهلين", set_minThresh:"عتبة تصعيد الوزير (إعادة التوزيع)", set_boTime:"مهلة رد مالك الأعمال", set_minTime:"مهلة تصعيد الوزير", set_fgMin:"الحد الأدنى المقبول لفجوة العدالة", set_hbrCeil:"سقف HBR", set_demandChg:"تغيّر كبير في الطلب", set_improveDur:"مدة تحسّن HBR",
+  f_sub:"الصيغ خلف المحرك — مع أمثلة محلولة", f_note:"جميع الأرقام مرتبطة بـ BRD V0.5.1", f_example:"مثال",
+  f_hbr:"نسبة عبء السكن (HBR)", f_hbrEx:"دخل صافٍ ١٢٬٠٠٠/شهر، تكلفة سكن ٤٬٨٦٠/شهر → ٤٬٨٦٠ ÷ ١٢٬٠٠٠ = ٤٠٫٥٪",
+  f_alloc:"الدعم حسب الشريحة", f_allocEx:"دخل متاح ٦٬٠٠٠ × خصم ٤٠٪ = ٢٬٤٠٠ أقصى تكلفة سكن؛ الدعم الشهري = الفعلي − الفائدة المثلى",
+  f_fg:"فجوة العدالة", f_fgEx:"شريحة <١٠ك تحصل على ٣٦٪ من الدعم لكنها ٦٢٪ من المستفيدين → ٠٫٣٦ ÷ ٠٫٦٢ = ٠٫٥٨ (<١٫٠)",
+  f_sav:"وفورات ٥ سنوات", f_savEx:"إنفاق المصفوفة الحالية − إنفاق السيناريو الأمثل = ١٫٣٧–٣٫٤ مليار ريال",
+  ins_title:"رؤى الذكاء الاصطناعي", ins_sub:"قراءة لغوية للوضع الحالي",
+  ins_tenure_h:"تحوّل هيكلي في الحيازة", ins_tenure_t:"تضخم الإيجار ٨–١٠٪ يفوق نمو الأجور ٤–٥٪، بينما تبقى أسعار الشراء منخفضة.", ins_tenure_r:"تحويل الميزانية نحو دعم الشراء لإخراج المواطنين من سوق الإيجار المتقلب.",
+  ins_fiscal_h:"المتسع المالي", ins_fiscal_t:"الإنفاق السنوي المتوقع نحو ٧٦٪، يتبقى نحو ٢٤٪ (٣٨٤ مليون ريال).", ins_fiscal_r:"استخدام هذا المتسع لإعادة توزيع استراتيجية نحو الأشد حاجة.",
+  ins_fair_h:"فجوة العدالة", ins_fair_t:"فجوة ٠٫٥٨ مع HBR ٤٠٫٥٪ تشير إلى سوء تخصيص — الدعم لا يصل للأكثر هشاشة.", ins_fair_r:"إعادة معايرة مصفوفة الدعم لرفع الدقة للشرائح الأشد هشاشة.",
+  whatif_sandbox:"معزول في بيئة اختبار — المحاكاة لا تمسّ التخصيصات أو الميزانيات الحية." });
+
 function App(){
   const [user,setUserState]=useState(null);
   const [lang,setLang]=useState(()=>{ try{ const q=new URLSearchParams(window.location.search).get("ln"); if(q==="zh"||q==="ar"||q==="en") return q; }catch(e){} return "en"; });
@@ -2274,16 +2477,16 @@ function App(){
 
   let page=null;
   if(user==="analyst"){
-    page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="mortgage"?<MortgagePlanning/> : route==="forecast"?<ForecastFairness/>
+    page = route==="data"?<DataReadiness/> : route==="formula"?<FormulaPage/> : route==="alloc"?<Allocation/> : route==="mortgage"?<MortgagePlanning/> : route==="forecast"?<ForecastFairness/>
       : route==="referrals"?<BeneficiaryTracking/> : route==="impact"?<ImpactAttribution/> : route==="whatif"?<WhatIf/> : route==="packages"?<DecisionPackages/>
       : route==="inventory"?<InventoryAbsorption/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/>
-      : route==="copilot"?<CopilotHandoff/> : <AnalystHome/>;
+      : route==="copilot"?<CopilotHandoff/> : route==="agents"?<AgentArchitecture/> : route==="settings"?<SettingsPage/> : <AnalystHome/>;
   } else if(user==="owner"){
     page = route==="data"?<DataReadiness/> : route==="alloc"?<Allocation/> : route==="approvals"?<DecisionPackages filter={p=>p.status!=="draft"}/> : route==="referrals"?<BeneficiaryTracking/> : route==="forecast"?<ForecastFairness/>
-      : route==="inventory"?<InventoryAbsorption/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : <OwnerHome/>;
+      : route==="inventory"?<InventoryAbsorption/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : route==="agents"?<AgentArchitecture/> : route==="settings"?<SettingsPage/> : <OwnerHome/>;
   } else {
     page = route==="decisions"?<DecisionPackages filter={p=>["escalated","adjudicated","rejected"].includes(p.status)}/>
-      : route==="forecast"?<ForecastFairness/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : <MinisterHome/>;
+      : route==="forecast"?<ForecastFairness/> : route==="impact"?<ImpactAttribution/> : route==="benchmark"?<Benchmarking/> : route==="audit"?<AuditTrailPage/> : route==="agents"?<AgentArchitecture/> : route==="settings"?<SettingsPage/> : <MinisterHome/>;
   }
   return (<Ctx.Provider value={store}>
     <TopBar/>
