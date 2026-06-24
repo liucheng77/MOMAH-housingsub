@@ -95,6 +95,28 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .rel-item{position:relative;padding-inline-start:22px;padding-bottom:18px;border-inline-start:2px solid var(--line)}
 .rel-item:last-child{border-color:transparent;padding-bottom:2px}
 .rel-mtitle{display:inline-flex;align-items:center;gap:8px}
+.mega-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.mega-kpi .mk-title{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.mega-kpi .mk-viz{min-height:60px;display:flex;align-items:flex-end}
+.mega-kpi .mk-viz>*{width:100%}
+.mega-kpi .mk-foot{display:flex;align-items:baseline;justify-content:space-between;margin-top:8px}
+.mega-kpi .mk-val{font-size:20px;font-weight:800;color:var(--ink)}
+.mega-kpi .mk-delta{font-size:12px;font-weight:700}
+.lineage{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lineage .ln-node{padding:8px 14px;border-radius:10px;background:var(--green-50);border:1px solid var(--green-100);font-weight:700;font-size:13px;color:var(--green-dark)}
+.lineage .ln-arrow{color:var(--muted);font-weight:700}
+.kpi-click{cursor:pointer;transition:box-shadow .15s,transform .1s}
+.kpi-click:hover{box-shadow:0 5px 16px rgba(16,33,28,.12);transform:translateY(-1px)}
+.kpi-more{margin-top:8px;font-size:11px;font-weight:600;color:var(--green-dark);opacity:.85}
+.kd-bars{display:flex;flex-direction:column;gap:7px}
+.kd-row{display:flex;align-items:center;gap:10px}
+.kd-name{width:72px;font-size:12.5px;color:var(--muted)}
+.kd-bar{flex:1;height:14px;background:#eef2ef;border-radius:7px;overflow:hidden}
+.kd-bar>span{display:block;height:100%;border-radius:7px}
+.kd-val{width:60px;text-align:end;font-size:12.5px;font-weight:700}
+.trace{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+.trace-step{display:flex;gap:8px;font-size:12px;padding:3px 0}
+.trace-step .ts-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-top:5px;flex:0 0 auto}
 .agent-tile{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
 .agent-tile .at-head{display:flex;align-items:center;gap:8px;font-size:13.5px}
 .agent-tile .at-head .ic-gear{filter:none}
@@ -106,6 +128,18 @@ h1,h2,h3,h4{margin:0;font-weight:600;color:var(--ink)}
 .insight-card{border:1px solid var(--line);border-inline-start:4px solid #6d5ae6;border-radius:12px;padding:14px;background:linear-gradient(180deg,#faf9ff,#f6f4fe)}
 .insight-card.good{border-inline-start-color:var(--green);background:linear-gradient(180deg,#f4fcf7,#eefaf2)}
 .insight-card.warn{border-inline-start-color:var(--amber);background:linear-gradient(180deg,#fffaf0,#fff6e6)}
+.insight-card.gray{border-inline-start-color:#cbd5d0;background:#fafcfb}
+.bmbar-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.bmbar-lab{width:96px;font-size:12px}
+.bmbar{flex:1;height:13px;background:#eef2ef;border-radius:7px;overflow:hidden}
+.bmbar>span{display:block;height:100%;border-radius:7px}
+.bmbar-val{width:56px;text-align:end;font-size:12px;font-weight:700}
+.fg-heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.fg-tile{border:2px solid var(--green);border-radius:10px;padding:12px;text-align:center;background:#fff}
+.fg-tile .fgt-n{font-size:12px;color:var(--muted);margin-bottom:4px}
+.fg-tile .fgt-v{font-size:20px;font-weight:800}
+.gate-box{background:var(--green-50);border:1px solid var(--green-100);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;flex-direction:column;gap:6px}
+.gate-row{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
 .insight-card .ic-h{font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--ink)}
 .insight-card .ic-t{font-size:12.5px;line-height:1.65;color:var(--muted);margin-bottom:10px}
 .insight-card .ic-r{font-size:12.5px;line-height:1.6;font-weight:600;color:#5a4ad1}
@@ -595,7 +629,7 @@ const I18N = {
     owner_desc:"Reviews and approves tactical recommendations.",
     minister_desc:"Adjudicates strategic items (caps / internal regulations).",
     // nav
-    nav_home:"Home", nav_data:"Data Readiness", nav_alloc:"Allocation Plan", nav_forecast:"Forecast & Fairness",
+    nav_home:"Dashboard", nav_data:"Data Readiness", nav_alloc:"Allocation Plan", nav_forecast:"Forecast & Fairness",
     nav_whatif:"What-if Simulation", nav_packages:"Decision Packages", nav_approvals:"Approvals",
     nav_audit:"Audit Trail", nav_copilot:"Housing Copilot", nav_cockpit:"Strategic Cockpit", nav_decisions:"Strategic Decisions",
     // KPIs
@@ -680,7 +714,7 @@ const I18N = {
     analyst_desc:"يشغّل التحليلات والمحاكاة ويُجمّع حزم القرار ويرفعها.",
     owner_desc:"يراجع ويعتمد التوصيات التكتيكية.",
     minister_desc:"يبتّ في البنود الاستراتيجية (السقوف / اللوائح الداخلية).",
-    nav_home:"الرئيسية", nav_data:"جاهزية البيانات", nav_alloc:"خطة التخصيص", nav_forecast:"التنبؤ والعدالة",
+    nav_home:"لوحة المعلومات", nav_data:"جاهزية البيانات", nav_alloc:"خطة التخصيص", nav_forecast:"التنبؤ والعدالة",
     nav_whatif:"محاكاة الافتراضات", nav_packages:"حزم القرار", nav_approvals:"الاعتمادات",
     nav_audit:"سجل التدقيق", nav_copilot:"مساعد الإسكان", nav_cockpit:"لوحة القيادة", nav_decisions:"القرارات الاستراتيجية",
     kpi_savings:"الوفورات المتوقعة (٥ سنوات)", kpi_fairness:"فجوة العدالة", kpi_hbr:"عبء السكن (HBR)",
@@ -789,10 +823,13 @@ function NotifBell(){
     </div>}
   </div>);
 }
-function KPI({label,value,sub,tone}){
+function KPI({label,value,sub,tone,onClick}){
+  const {t}=useStore();
   const color = tone==="good"?"var(--green)":tone==="bad"?"var(--danger)":tone==="warn"?"var(--amber)":"var(--ink)";
-  return (<div className={"kpi"+(tone?" kpi-"+tone:"")}><div className="label">{label}</div>
-    <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub">{sub}</div>}</div>);
+  return (<div className={"kpi"+(tone?" kpi-"+tone:"")+(onClick?" kpi-click":"")} onClick={onClick}>
+    <div className="label">{label}</div>
+    <div className="value" style={{color}}>{value}</div>{sub&&<div className="sub">{sub}</div>}
+    {onClick&&<div className="kpi-more">{t("viewTrend")} ↗</div>}</div>);
 }
 function Section({title,sub,right,children,className}){
   return (<div className={"card pad acc"+(className?" "+className:"")} style={{marginBottom:16}}>
@@ -943,12 +980,21 @@ function TopBar(){
 }
 
 const NAV = {
-  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_formula","∑"],["nav_alloc","▦"],["nav_mortgage","🏦"],["nav_forecast","📈"],["nav_referrals","👥"],["nav_impact","🔎"],["nav_whatif","✦"],["nav_packages","📦"],["nav_inventory","🏘"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_copilot","🤝"],["nav_agents","🧠"],["nav_settings","⚙"]],
-  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🧠"],["nav_settings","⚙"]],
-  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🧠"],["nav_settings","⚙"]],
+  analyst:[["nav_home","◧"],["nav_data","⛁"],["nav_formula","∑"],["nav_alloc","▦"],["nav_mortgage","🏦"],["nav_forecast","📈"],["nav_referrals","👥"],["nav_impact","🔎"],["nav_whatif","✦"],["nav_packages","📦"],["nav_inventory","🏘"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_copilot","🤝"],["nav_agents","🤖"],["nav_settings","⚙"]],
+  owner:[["nav_home","◧"],["nav_data","⛁"],["nav_alloc","▦"],["nav_approvals","✔"],["nav_referrals","👥"],["nav_forecast","📈"],["nav_inventory","🏘"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🤖"],["nav_settings","⚙"]],
+  minister:[["nav_cockpit","◧"],["nav_decisions","⚖"],["nav_forecast","📈"],["nav_impact","🔎"],["nav_benchmark","🌐"],["nav_audit","🕓"],["nav_agents","🤖"],["nav_settings","⚙"]],
 };
 // Release timestamps are in Saudi Arabia Standard Time (AST, UTC+3).
 const RELEASES=[
+  {ver:"v1.8", date:"2026-06-24 11:58",
+    en:["Dashboard KPIs as visuals: radial gauge, mini-area, multi-bar, stacked bar","Data Readiness: data-lineage strip with completeness gate (GO/HOLD)"],
+    zh:["仪表盘 KPI 可视化:环形仪表、面积图、多档柱、堆叠条","数据就绪:数据血缘条 + 完整度门控(GO/HOLD)"]},
+  {ver:"v1.7", date:"2026-06-24 11:34",
+    en:["Benchmarking: KSA/OECD/best bars + colour-coded reference programs","Fairness: region heatmap view (bar / heatmap toggle)","Formula: version timeline + Test-in-What-if","Allocation: submit checklist gate"],
+    zh:["国际对标:沙特/OECD/最佳 对比条 + 参照项目颜色编码卡","公平:区域热力图视图(柱状 / 热力 切换)","公式:版本时间线 + 在 What-if 中测试","配分:提交前 Checklist 门控"]},
+  {ver:"v1.6", date:"2026-06-24 11:10",
+    en:["Dashboard: KPIs are clickable → 12-month trend + income-bracket drill-down","\"Home\" renamed to \"Dashboard\"","Allocation: vs-last-month column, Run What-if per row, agent trace (Show trace)"],
+    zh:["仪表盘:KPI 可点击 → 12 个月趋势 + 收入档下钻","\"首页\"改名为\"仪表盘\"","配分:环比上月列、每行跑 What-if、agent 链路(Show trace)"]},
   {ver:"v1.5", date:"2026-06-24 10:46",
     en:["Settings center and Subsidy Formula pages added","Agent Architecture overview (L1/L2/L3 + scope)","AI insight cards on the dashboard; What-if sandbox notice + scenario type","Fairness drill-down by region / income / loan term / age"],
     zh:["新增设置中心与补贴公式页","智能体架构总览(L1/L2/L3 + 职责)","首页 AI 洞察卡片;What-if 沙箱声明 + 情景类型","公平性多维下钻:地区 / 收入 / 贷款期限 / 年龄"]},
@@ -1017,6 +1063,7 @@ function bandLabel(t,key){ return t("bl_"+key); }
 /* ---- Analyst home ---- */
 function AnalystHome(){
   const {t,setRoute,packages}=useStore(); const {money}=useMoney();
+  const [kd,setKd]=useState(null);
   const reco=useMemo(()=>computeAllocation(RECO_PARAMS),[]);
   const sv=scenarioSavings(reco);
   const myPending=packages.filter(p=>p.status==="submitted").length;
@@ -1031,11 +1078,16 @@ function AnalystHome(){
   return (<div className="fade">
     <PageHeader title={t("home_hello")+" · "+t("analyst_full")} sub={t("monthlyCycle")}/>
     <div className="cols-4" style={{marginBottom:16}}>
-      <KPI label={t("kpi_savings")+" ("+t("recommended")+")"} value={money(sv.phase)} sub={(sv.pctOfBudget*100).toFixed(0)+"% "+t("of_budget")} tone="good"/>
-      <KPI label={t("kpi_fairness")} value={BASELINE.FG.toFixed(2)} sub={t("fair_if")} tone="bad"/>
-      <KPI label={t("kpi_hbr")} value={pct1(BASELINE.HBR)} sub={t("toTarget")} tone="warn"/>
-      <KPI label={t("kpi_budget")} value={(BASELINE.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)+"%"} sub={t("baseline")} />
+      <MegaKpi title={t("kpi_ownership")} delta="▲ +0.8pp" onClick={()=>setKd("ownership")}>
+        <RadialGauge value={66.24} target={70} max={100} unit="%"/></MegaKpi>
+      <MegaKpi title={t("kpi_hbr")} value={pct1(BASELINE.HBR)} delta="▼ −0.6pp" onClick={()=>setKd("hbr")}>
+        <MiniArea series={KPI_DETAIL.hbr.series} thr={38} min={34} max={42}/></MegaKpi>
+      <MegaKpi title={t("kpi_fairness")} value={BASELINE.FG.toFixed(2)} delta="▲ +0.04" onClick={()=>setKd("fairness")}>
+        <MiniBars data={KPI_DETAIL.fairness.drill} thr={1.0}/></MegaKpi>
+      <MegaKpi title={t("kpi_budget")} value={(BASELINE.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)+"%"} delta="▼ −2.1pp" onClick={()=>setKd("budget")}>
+        <StackedBar segments={[{v:54,c:"var(--green)"},{v:22,c:"#5aa6e0"},{v:13,c:"#f0a91e"}]} marks={[70,90]} total={100}/></MegaKpi>
     </div>
+    {kd&&<KpiDetailModal kpi={kd} onClose={()=>setKd(null)}/>}
     <AIInsights/>
     <Section title={t("quickActions")}>
       <div className="cols-4">
@@ -1177,6 +1229,17 @@ function DataReadiness(){
       })}
       </div>
     </div>
+    <Section title={t("dl_title")}>
+      <div className="lineage">
+        <div className="ln-node">BIDSC</div>
+        <span className="ln-arrow">→</span>
+        <span className={"chip "+(avgComp>=90?"":"amber")} style={{flex:"0 0 auto"}}>{avgComp>=90?("● "+t("dl_go")):("● "+t("dl_hold"))}</span>
+        <span className="ln-arrow">→</span>
+        <div className="ln-node">{t("dl_opt")}</div>
+        <div className="ln-node">{t("dl_fc")}</div>
+        <div className="ln-node">{t("dl_track")}</div>
+      </div>
+    </Section>
     {showUp&&<Modal title={t("importTitle")} onClose={()=>{setShowUp(false);setFile(null);setChk(null);}}>
       <div className={"dropzone"+(over?" over":"")}
         onDragOver={e=>{e.preventDefault();setOver(true);}}
@@ -1205,10 +1268,12 @@ function DataReadiness(){
 }
 
 /* ---- Allocation ---- */
+const ALLOC_VSPREV=[82,58,-21,-34,12,-8,15];
 function Allocation(){
-  const {t,user,allocation,recalcAlloc,submitAlloc,actAlloc}=useStore(); const {moneyFull}=useMoney();
+  const {t,user,allocation,recalcAlloc,submitAlloc,actAlloc,setRoute}=useStore(); const {moneyFull}=useMoney();
   const [open,setOpen]=useState(null);
   const [busy,setBusy]=useState(false); const [note,setNote]=useState(""); const [err,setErr]=useState(false);
+  const [gates,setGates]=useState({a:false,b:false,c:false}); const allGates=gates.a&&gates.b&&gates.c;
   const a=allocation||{lastSync:"—",recalcAt:null,status:"draft",rejectNote:""};
   const data=BASELINE;
   function doRecalc(){ setBusy(true); setTimeout(()=>{ recalcAlloc&&recalcAlloc(); setBusy(false); },900); }
@@ -1224,9 +1289,14 @@ function Allocation(){
         <div><div className="muted" style={{fontSize:12}}>{t("status")}</div><div style={{marginTop:5}}><span className={"chip "+(cmap[a.status]||"")}>{t("allocStatus_"+a.status)}</span></div></div>
       </div>
       {a.status==="rejected"&&a.rejectNote&&<div className="banner" style={{marginBottom:12,background:"var(--danger-50)",borderColor:"#f0b4ad",color:"#7a241d"}}>✕ {t("rejectReason")}: {a.rejectNote}</div>}
+      {user==="analyst"&&(a.status==="draft"||a.status==="rejected")&&<div className="gate-box">
+        {[["a","al_gate1"],["b","al_gate2"],["c","al_gate3"]].map(([g,lk])=>(
+          <label key={g} className="gate-row"><input type="checkbox" checked={gates[g]} onChange={e=>setGates({...gates,[g]:e.target.checked})}/> {t(lk)}</label>))}
+        {!allGates&&<div className="muted" style={{fontSize:11.5,marginTop:4}}>{t("al_gateHint")}</div>}
+      </div>}
       {user==="analyst"&&<div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
         <button className="btn secondary sm" onClick={doRecalc} disabled={busy}>{busy?t("recalculating"):("↻ "+t("recalc"))}</button>
-        {(a.status==="draft"||a.status==="rejected")&&<button className="btn sm" onClick={()=>submitAlloc&&submitAlloc()}>✔ {t("approveSubmit")}</button>}
+        {(a.status==="draft"||a.status==="rejected")&&<button className="btn sm" onClick={()=>submitAlloc&&submitAlloc()} disabled={!allGates}>✔ {t("approveSubmit")}</button>}
         {a.status==="submitted"&&<span className="chip info">⏳ {t("allocStatus_submitted")}</span>}
         {a.status==="approved"&&<span className="chip">✓ {t("allocStatus_approved")}</span>}
       </div>}
@@ -1243,22 +1313,31 @@ function Allocation(){
     </Section>
     <Section title={<span className="sect-right">{t("monthlyCycle")}<InfoTip text={t("fml_alloc")}/></span>} right={<span className="sect-right"><span className="chip">{t("kpi_budget")}: {(data.spend/(BRD.phase3BudgetSAR/BRD.phase3Years)*100).toFixed(0)}%</span><AgentBadge name={t("agent_alloc")} lvl="L2"/></span>}>
       <div className="scrollx"><table className="tbl">
-        <thead><tr><th>{t("incomeBand")}</th><th className="right-num">{t("contracts")}</th><th className="right-num">{t("subsidy")}</th><th className="right-num">{t("share")}</th><th></th></tr></thead>
-        <tbody>{data.rows.map((r,i)=>(<React.Fragment key={r.key}>
+        <thead><tr><th>{t("incomeBand")}</th><th className="right-num">{t("contracts")}</th><th className="right-num">{t("subsidy")}</th><th className="right-num">{t("share")}</th><th className="right-num">{t("al_vsPrev")}</th><th></th></tr></thead>
+        <tbody>{data.rows.map((r,i)=>{ const dv=r.subsidy>0?ALLOC_VSPREV[i%ALLOC_VSPREV.length]:null; return (<React.Fragment key={r.key}>
           <tr>
             <td>{bandLabel(t,r.key)} {r.below?<span className="chip gray" style={{marginInlineStart:6}}>{t("below10k")}</span>:null}</td>
             <td className="right-num mono">{n0(r.contracts)}</td>
             <td className="right-num mono">{moneyFull(r.subsidy)}</td>
             <td className="right-num mono">{(r.cShare*100).toFixed(1)}%</td>
+            <td className="right-num mono" style={{color:dv==null?"var(--muted)":dv>0?"var(--amber)":"var(--green)",fontSize:12}}>{dv==null?"—":(dv>0?"▲ +":"▼ ")+"⃁ "+Math.abs(dv)}</td>
             <td className="right-num"><button className="btn sm" onClick={()=>setOpen(open===i?null:i)}>{t("explain")}</button></td>
           </tr>
-          {open===i&&<tr className="expand-row"><td colSpan={5}>
+          {open===i&&<tr className="expand-row"><td colSpan={6}>
             <div style={{fontSize:12.5}}>
               <strong>{t("impact")}:</strong> {bandLabel(t,r.key)} — {r.below?t("below10k"):t("above10k")} · {t("subsidy")} {moneyFull(r.subsidy)} · {t("share")} {(r.cShare*100).toFixed(1)}% · HBR {pct1(r.hbr)}.
               <div className="muted" style={{marginTop:4}}>Within the approved policy matrix · contributes to Fairness Gap {BASELINE.FG.toFixed(2)}.</div>
-              <div className="muted" style={{marginTop:4,display:"flex",alignItems:"center",gap:6}}><AgentBadge name={t("agent_alloc")} lvl="L2"/></div>
+              <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
+                <button className="btn secondary sm" onClick={()=>setRoute&&setRoute("whatif")}>✦ {t("wf_runHint")}</button>
+              </div>
+              <div className="trace">
+                <div style={{fontWeight:700,fontSize:12,marginBottom:6}}>▶ {t("al_showTrace")}</div>
+                <div className="trace-step"><span className="ts-dot"/><div><b>{t("agent_data")}</b> · L1<br/><span className="muted">{t("tr_data")}</span></div></div>
+                <div className="trace-step"><span className="ts-dot"/><div><b>{t("agent_alloc")}</b> · L2<br/><span className="muted">{t("tr_opt")}</span></div></div>
+                <div className="trace-step"><span className="ts-dot"/><div><b>{t("agent_alloc")}</b> · L2<br/><span className="muted">{t("tr_type")}</span></div></div>
+              </div>
             </div></td></tr>}
-        </React.Fragment>))}</tbody>
+        </React.Fragment>);})}</tbody>
       </table></div>
     </Section>
   </div>);
@@ -1270,6 +1349,7 @@ function ForecastFairness(){
   const scn=BASELINE; const fc=useMemo(()=>buildForecast(scn),[]);
   const regions=useMemo(()=>fgByRegion(scn.FG),[]);
   const [dim,setDim]=useState("region");
+  const [view,setView]=useState("bar");
   const dimData={
     region: regions.map(r=>({name:t("rg_"+r.key),fg:r.fg})),
     income: [["<5k",0.51],["5–10k",0.72],["10–15k",1.02],["15–20k",1.18],[">20k",1.25]].map(([n,f])=>({name:n,fg:f})),
@@ -1305,11 +1385,17 @@ function ForecastFairness(){
       </div>
     </Section>
     <Section title={<span className="sect-right">{t("fairnessByRegion")}<InfoTip text={t("fml_fg")}/></span>} right={<AgentBadge name={t("agent_fair")} lvl="L3"/>}>
-      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
         {[["region","fgdim_region"],["income","fgdim_income"],["loan","fgdim_loan"],["age","fgdim_age"]].map(([k,lk])=>(
           <button key={k} className={"btn sm "+(dim===k?"":"secondary")} onClick={()=>setDim(k)}>{t(lk)}</button>))}
+        <span style={{flex:1}}/>
+        <button className={"btn sm "+(view==="bar"?"":"secondary")} onClick={()=>setView("bar")}>▦ {t("fg_bar")}</button>
+        <button className={"btn sm "+(view==="heat"?"":"secondary")} onClick={()=>setView("heat")}>▥ {t("fg_heat")}</button>
       </div>
-      <div style={{width:"100%",height:300}}>
+      {view==="heat"
+        ? <div className="fg-heat">{fgData.map((r,i)=>{ const c=r.fg>=1?"var(--green)":r.fg>=0.9?"var(--amber)":"var(--danger)"; return (
+            <div key={i} className="fg-tile" style={{borderColor:c}}><div className="fgt-n">{r.name}</div><div className="fgt-v" style={{color:c}}>{r.fg.toFixed(2)}</div></div>);})}</div>
+        : <div style={{width:"100%",height:300}}>
         {!ok? noChart :
         <C.ResponsiveContainer>
           <C.BarChart data={fgData} margin={{top:4,right:8,left:0,bottom:4}}>
@@ -1323,7 +1409,7 @@ function ForecastFairness(){
             </C.Bar>
           </C.BarChart>
         </C.ResponsiveContainer>}
-      </div>
+      </div>}
     </Section>
     <Section title={t("leakage")} sub={t("leak_routeHint")} right={<AgentBadge name={t("agent_fair")} lvl="L3"/>}>
       {leaks.map(l=>{
@@ -1788,7 +1874,7 @@ I18N.zh = {
   analyst:"分析师", owner:"业务负责人", minister:"部长",
   analyst_full:"分析师", owner_full:"业务负责人", minister_full:"部长",
   analyst_desc:"运行分析与 What-if，组装并上报决策包。", owner_desc:"审阅并采纳战术级推荐。", minister_desc:"裁决战略事项（补贴上限 / 内部法规）。",
-  nav_home:"首页", nav_data:"数据就绪", nav_alloc:"配分方案", nav_forecast:"预测与公平",
+  nav_home:"仪表盘", nav_data:"数据就绪", nav_alloc:"配分方案", nav_forecast:"预测与公平",
   nav_whatif:"What-if 模拟", nav_packages:"决策包", nav_approvals:"审批中心",
   nav_audit:"审计轨迹", nav_copilot:"住房 Copilot", nav_cockpit:"战略驾驶舱", nav_decisions:"战略决策",
   kpi_savings:"预计节省（5年）", kpi_fairness:"公平性差距", kpi_hbr:"住房负担（HBR）",
@@ -2011,9 +2097,11 @@ const BENCH=[
   {dim:"bm_cost",ksa:1.0,  target:0.85,oecd:0.80, best:0.70, lowBetter:true,  unit:"x"},
   {dim:"bm_sat", ksa:3.9,  target:4.3, oecd:4.1, best:4.6, lowBetter:false, unit:"/5"},
 ];
+const BM_PROGRAMS=[{k:"bmp_sg",tone:"good"},{k:"bmp_de",tone:"good"},{k:"bmp_uk",tone:"warn"},{k:"bmp_us",tone:"gray"}];
 function Benchmarking(){
   const {t}=useStore(); const [gen,setGen]=useState(false);
   const meets=(b)=> b.lowBetter ? b.ksa<=b.target : b.ksa>=b.target;
+  const cmpMax=(b)=>Math.max(b.ksa,b.oecd,b.best,b.target)*1.05;
   return (<div className="fade">
     <PageHeader title={t("nav_benchmark")} sub={t("bm_sub")} right={<span className="sect-right">
       <button className="btn secondary sm" onClick={()=>setGen(true)}>📄 {t("bm_gen")}</button>
@@ -2032,11 +2120,42 @@ function Benchmarking(){
           <td><span className={"chip "+(ok?"":"amber")}>{ok?("✓ "+t("bm_meets")):t("bm_below")}</span></td>
         </tr>);})}</tbody></table>
     </Section>
+    <Section title={t("bm_cmpTitle")} sub={t("bm_cmpNote")}>
+      {BENCH.map(b=>{ const mx=cmpMax(b); const bar=(v,c)=>(<div className="bmbar-row"><span className="bmbar-lab muted">{c}</span><span className="bmbar"><span style={{width:(v/mx*100)+"%",background:c===t("bm_ksa")?"var(--info)":c===t("bm_best")?"var(--green)":"#c8cfd9"}}/></span><span className="bmbar-val mono">{v}{b.unit}</span></div>);
+        return (<div key={b.dim} style={{marginBottom:14}}>
+          <div style={{fontWeight:600,fontSize:13,marginBottom:6}}>{t(b.dim)}</div>
+          {bar(b.ksa,t("bm_ksa"))}{bar(b.oecd,t("bm_oecd"))}{bar(b.best,t("bm_best"))}
+        </div>);})}
+    </Section>
+    <Section title={t("bm_applic")}>
+      <div className="cols-2">
+        {BM_PROGRAMS.map(p=>(<div key={p.k} className={"insight-card "+p.tone}>
+          <div className="ic-h">{t(p.k+"_h")}</div>
+          <div className="ic-t">{t(p.k+"_t")}</div>
+          <span className={"chip "+(p.tone==="good"?"":p.tone==="warn"?"amber":"gray")}>{t(p.k+"_tag")}</span>
+        </div>))}
+      </div>
+    </Section>
     <Section title={t("bm_satTitle")}>
       <div className="muted" style={{fontSize:13,lineHeight:1.7}}>{t("bm_note")}</div>
     </Section>
   </div>);
 }
+Object.assign(I18N.en,{ bm_cmpTitle:"KSA vs OECD vs best-in-class", bm_cmpNote:"Normalised per dimension", bm_applic:"Reference programs — applicability",
+  bmp_sg_h:"Singapore · CPF Housing Grant", bmp_sg_t:"Mandatory savings co-fund home purchase.", bmp_sg_tag:"Directly applicable",
+  bmp_de_h:"Germany · Wohngeld", bmp_de_t:"Means-tested housing allowance indexed to rent and income.", bmp_de_tag:"Directly applicable",
+  bmp_uk_h:"UK · Help to Buy", bmp_uk_t:"Equity loan for first-time buyers on new-builds.", bmp_uk_tag:"Needs legislative change",
+  bmp_us_h:"USA · LIHTC", bmp_us_t:"Tax credits for affordable rental supply.", bmp_us_tag:"Not applicable to context" });
+Object.assign(I18N.zh,{ bm_cmpTitle:"沙特 vs OECD vs 最佳实践", bm_cmpNote:"按维度归一化", bm_applic:"参照项目 —— 可借鉴性",
+  bmp_sg_h:"新加坡 · CPF 购房补助", bmp_sg_t:"强制储蓄共同出资购房。", bmp_sg_tag:"可直接借鉴",
+  bmp_de_h:"德国 · Wohngeld", bmp_de_t:"按租金与收入挂钩的经济状况审查住房津贴。", bmp_de_tag:"可直接借鉴",
+  bmp_uk_h:"英国 · Help to Buy", bmp_uk_t:"为首次购房者提供新房股权贷款。", bmp_uk_tag:"需立法修改",
+  bmp_us_h:"美国 · LIHTC", bmp_us_t:"为可负担租赁供给提供税收抵免。", bmp_us_tag:"不适用本国情境" });
+Object.assign(I18N.ar,{ bm_cmpTitle:"السعودية مقابل OECD مقابل الأفضل", bm_cmpNote:"مُطبَّع لكل بُعد", bm_applic:"برامج مرجعية — قابلية التطبيق",
+  bmp_sg_h:"سنغافورة · منحة CPF", bmp_sg_t:"ادخار إلزامي يشارك في تمويل الشراء.", bmp_sg_tag:"قابل للتطبيق مباشرة",
+  bmp_de_h:"ألمانيا · Wohngeld", bmp_de_t:"بدل سكن مرتبط بالدخل والإيجار.", bmp_de_tag:"قابل للتطبيق مباشرة",
+  bmp_uk_h:"بريطانيا · Help to Buy", bmp_uk_t:"قرض ملكية للمشترين لأول مرة.", bmp_uk_tag:"يتطلب تعديلاً تشريعياً",
+  bmp_us_h:"أمريكا · LIHTC", bmp_us_t:"إعفاءات ضريبية لعرض الإيجار الميسور.", bmp_us_tag:"غير قابل للتطبيق" });
 Object.assign(I18N.en,{ nav_referrals:"Beneficiary Tracking", nav_benchmark:"Intl. Benchmarking", agent_track:"Beneficiary Status Tracking agent", agent_bench:"Benchmarking agent",
   bt_sub:"Track beneficiary improvement and route referrals for human review", bt_rule:"Improvement = HBR ≤ 38% without support for 3 consecutive months → referral list",
   bt_redline:"Subsidy continues uninterrupted during review — the system never auto-terminates", bt_run:"Run detection",
@@ -2361,10 +2480,17 @@ const FORMULAS=[
   {k:"fml_savings", title:"f_sav", ex:"f_savEx"},
 ];
 function FormulaPage(){
-  const {t}=useStore();
+  const {t,setRoute}=useStore();
   return (<div className="fade">
     <PageHeader title={t("nav_formula")} sub={t("f_sub")} right={<AgentBadge name={t("agent_alloc")} lvl="L2"/>}/>
     <div className="banner" style={{marginBottom:14}}>● {t("f_note")}</div>
+    <Section title={t("fv_title")} right={<button className="btn sm" onClick={()=>setRoute&&setRoute("whatif")}>✦ {t("fv_test")}</button>}>
+      <div className="banner" style={{marginBottom:12}}>● {t("fv_br07")}</div>
+      <div className="rel-time">
+        <div className="rel-item cur"><span className="rel-dot"/><div className="rel-head"><b>FML-v1.1</b> <span className="muted" style={{fontSize:12}}>· {t("fv_candidate")}</span><span className="chip amber" style={{marginInlineStart:8}}>{t("fv_pending")}</span></div><ul className="rel-list"><li>{t("fv_v11")}</li></ul></div>
+        <div className="rel-item"><span className="rel-dot"/><div className="rel-head"><b>FML-v1.0</b> <span className="muted" style={{fontSize:12}}>· 2026-05-01</span><span className="chip" style={{marginInlineStart:8}}>{t("fv_active")}</span></div><ul className="rel-list"><li>{t("fv_v10")}</li></ul></div>
+      </div>
+    </Section>
     {FORMULAS.map(f=>(<Section key={f.k} title={t(f.title)}>
       <div className="fml-eq">{t(f.k)}</div>
       <div className="muted" style={{fontSize:13,marginTop:10,lineHeight:1.7}}><b>{t("f_example")}:</b> {t(f.ex)}</div>
@@ -2395,6 +2521,8 @@ Object.assign(I18N.en,{ nav_settings:"Settings", nav_formula:"Subsidy Formula",
   f_alloc:"Per-band support", f_allocEx:"Disposable income SAR 6,000 × 40% deduction = SAR 2,400 max housing cost; monthly support = actual − optimal interest",
   f_fg:"Fairness Gap", f_fgEx:"<10k group receives 36% of subsidy but is 62% of beneficiaries → 0.36 ÷ 0.62 = 0.58 (<1.0, under-served)",
   f_sav:"5-year savings", f_savEx:"Current-matrix spend − optimized scenario spend over the phase = SAR 1.37–3.4B",
+  fv_title:"Formula versions", fv_test:"Test in What-if", fv_br07:"A modified formula must be validated in What-if before it can be activated.", fv_candidate:"Candidate", fv_pending:"Pending validation", fv_active:"Active", fv_v11:"Deduction rate 40% → 43% — needs What-if validation.", fv_v10:"Baseline formula in production.",
+  al_gate1:"Spot-checked recommendations", al_gate2:"Compared vs last month", al_gate3:"Validated in What-if", al_gateHint:"Complete the checklist to enable submission",
   ins_title:"AI insights", ins_sub:"Natural-language reading of the current state",
   ins_tenure_h:"Structural tenure shift", ins_tenure_t:"Rent inflation 8–10% far outpaces wage growth 4–5%, while purchase prices stay in low single digits.", ins_tenure_r:"Shift budget toward purchase subsidies to move citizens out of the volatile rental market.",
   ins_fiscal_h:"Fiscal runway", ins_fiscal_t:"Projected annual spend tracks to ~76%, leaving ~24% (SAR 384M) of budget headroom.", ins_fiscal_r:"Use this headroom for strategic reallocation toward high-need applicants.",
@@ -2409,6 +2537,8 @@ Object.assign(I18N.zh,{ nav_settings:"设置", nav_formula:"补贴公式",
   f_alloc:"分档支援", f_allocEx:"可支配收入 6,000 × 40% 扣减 = 2,400 最高住房成本;月度支援 = 实际 − 最优利息",
   f_fg:"公平性差距", f_fgEx:"<1万群体获 36% 支援,却占 62% 受益人 → 0.36 ÷ 0.62 = 0.58(<1.0,偏少)",
   f_sav:"5 年节省", f_savEx:"现行矩阵支出 − 优化情景支出(整个阶段)= SAR 13.7–34 亿",
+  fv_title:"公式版本", fv_test:"在 What-if 中测试", fv_br07:"修改后的公式必须先在 What-if 验证,才能激活。", fv_candidate:"候选", fv_pending:"待验证", fv_active:"生效中", fv_v11:"扣除率 40% → 43% —— 需 What-if 验证。", fv_v10:"生产环境基线公式。",
+  al_gate1:"已抽查推荐", al_gate2:"已对比上月", al_gate3:"已在 What-if 验证", al_gateHint:"完成清单后方可提交",
   ins_title:"AI 洞察", ins_sub:"对当前态势的自然语言解读",
   ins_tenure_h:"结构性租购转变", ins_tenure_t:"租金通胀 8–10% 远超工资增长 4–5%,而购房价格仍处低个位数。", ins_tenure_r:"建议将预算转向购房补贴,把公民从动荡的租赁市场转移出来。",
   ins_fiscal_h:"财政空间", ins_fiscal_t:"预计年度支出约 76%,剩余约 24%(SAR 3.84 亿)预算空间。", ins_fiscal_r:"利用该空间向高需求申请者做战略再分配。",
@@ -2423,11 +2553,118 @@ Object.assign(I18N.ar,{ nav_settings:"الإعدادات", nav_formula:"صيغة
   f_alloc:"الدعم حسب الشريحة", f_allocEx:"دخل متاح ٦٬٠٠٠ × خصم ٤٠٪ = ٢٬٤٠٠ أقصى تكلفة سكن؛ الدعم الشهري = الفعلي − الفائدة المثلى",
   f_fg:"فجوة العدالة", f_fgEx:"شريحة <١٠ك تحصل على ٣٦٪ من الدعم لكنها ٦٢٪ من المستفيدين → ٠٫٣٦ ÷ ٠٫٦٢ = ٠٫٥٨ (<١٫٠)",
   f_sav:"وفورات ٥ سنوات", f_savEx:"إنفاق المصفوفة الحالية − إنفاق السيناريو الأمثل = ١٫٣٧–٣٫٤ مليار ريال",
+  fv_title:"إصدارات الصيغة", fv_test:"اختبار في What-if", fv_br07:"يجب التحقق من الصيغة المعدّلة في What-if قبل تفعيلها.", fv_candidate:"مرشّح", fv_pending:"بانتظار التحقق", fv_active:"فعّال", fv_v11:"معدل الخصم ٤٠٪ → ٤٣٪ — يحتاج تحقق What-if.", fv_v10:"الصيغة الأساسية في الإنتاج.",
+  al_gate1:"تم فحص التوصيات", al_gate2:"تمت المقارنة بالشهر الماضي", al_gate3:"تم التحقق في What-if", al_gateHint:"أكمل القائمة لتمكين الإرسال",
   ins_title:"رؤى الذكاء الاصطناعي", ins_sub:"قراءة لغوية للوضع الحالي",
   ins_tenure_h:"تحوّل هيكلي في الحيازة", ins_tenure_t:"تضخم الإيجار ٨–١٠٪ يفوق نمو الأجور ٤–٥٪، بينما تبقى أسعار الشراء منخفضة.", ins_tenure_r:"تحويل الميزانية نحو دعم الشراء لإخراج المواطنين من سوق الإيجار المتقلب.",
   ins_fiscal_h:"المتسع المالي", ins_fiscal_t:"الإنفاق السنوي المتوقع نحو ٧٦٪، يتبقى نحو ٢٤٪ (٣٨٤ مليون ريال).", ins_fiscal_r:"استخدام هذا المتسع لإعادة توزيع استراتيجية نحو الأشد حاجة.",
   ins_fair_h:"فجوة العدالة", ins_fair_t:"فجوة ٠٫٥٨ مع HBR ٤٠٫٥٪ تشير إلى سوء تخصيص — الدعم لا يصل للأكثر هشاشة.", ins_fair_r:"إعادة معايرة مصفوفة الدعم لرفع الدقة للشرائح الأشد هشاشة.",
   whatif_sandbox:"معزول في بيئة اختبار — المحاكاة لا تمسّ التخصيصات أو الميزانيات الحية." });
+
+/* ===== Dashboard KPI detail modal (12-mo trend + drill) ===== */
+const KMON=["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"];
+const KPI_DETAIL={
+  ownership:{titleKey:"kpi_ownership",unit:"%",thr:70,series:[63.0,63.5,64.0,64.2,64.6,65.0,65.2,65.5,65.8,66.0,66.1,66.24],drill:[["Riyadh",68],["Makkah",64],["Eastern",71],["Asir",60],["Madinah",66]],events:[]},
+  savings:{titleKey:"kpi_savings",unit:"B",series:[0.2,0.5,0.8,1.0,1.3,1.6,1.8,2.0,2.3,2.6,2.9,3.1],drill:[["Riyadh",0.9],["Makkah",0.7],["Eastern",0.6],["Asir",0.5],["Others",0.4]],events:[]},
+  fairness:{titleKey:"kpi_fairness",unit:"",thr:1.0,series:[0.58,0.62,0.66,0.71,0.76,0.81,0.86,0.90,0.94,0.97,1.00,1.02],drill:[["<5K",0.51],["5–10K",0.72],["10–15K",1.02],["15–20K",1.18],[">20K",1.25]],events:[["May","ev_rebalance"]]},
+  hbr:{titleKey:"kpi_hbr",unit:"%",thr:38,series:[41.0,40.8,40.5,40.1,39.6,39.0,38.4,37.9,37.4,37.0,36.6,36.2],drill:[["<3K",38.5],["3–5K",35.1],["5–10K",31.4],["10–20K",28.2],[">20K",22.5]],events:[["Jun","ev_fmlAct"]]},
+  budget:{titleKey:"kpi_budget",unit:"%",thr:90,series:[12,22,32,41,50,58,64,70,76,80,85,89],drill:[["Cash",54],["In-kind",22],["Interest",13]],events:[["Jun","ev_alert"]]},
+};
+function KpiDetailModal({kpi,onClose}){
+  const {t}=useStore(); const d=KPI_DETAIL[kpi]; if(!d) return null;
+  const C=RC; const ok=!!RC.ResponsiveContainer;
+  const data=KMON.map((m,i)=>({m,v:d.series[i]}));
+  const maxDrill=Math.max(...d.drill.map(x=>x[1]));
+  return (<Modal title={<span className="rel-mtitle">📈 {t(d.titleKey)} · {t("kd_trend")}</span>} onClose={onClose}>
+    <div style={{width:"100%",height:240,marginBottom:10}}>
+      {!ok? <div className="muted" style={{padding:20}}>{t("kd_noChart")}</div> :
+      <C.ResponsiveContainer>
+        <C.LineChart data={data} margin={{top:8,right:14,left:0,bottom:4}}>
+          <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
+          <C.XAxis dataKey="m" tick={{fontSize:10}}/>
+          <C.YAxis tick={{fontSize:10}} width={36}/>
+          <C.Tooltip formatter={(v)=>v+d.unit}/>
+          {d.thr!=null?<C.ReferenceLine y={d.thr} stroke="#b3261e" strokeDasharray="4 4"/>:null}
+          <C.Line type="monotone" dataKey="v" stroke="#006C35" strokeWidth={2.5} dot={false}/>
+        </C.LineChart>
+      </C.ResponsiveContainer>}
+    </div>
+    <div style={{fontWeight:700,fontSize:13,margin:"6px 0 10px"}}>{t("kd_drill")}</div>
+    <div className="kd-bars">
+      {d.drill.map(([n,v])=>{ const over=kpi==="hbr"&&v>d.thr;
+        return (<div key={n} className="kd-row">
+          <span className="kd-name">{n}</span>
+          <span className="kd-bar"><span style={{width:(v/maxDrill*100)+"%",background:over?"var(--amber)":"var(--green)"}}/></span>
+          <span className="kd-val mono">{v}{d.unit}</span>
+        </div>);})}
+    </div>
+    {d.events.length>0?<div style={{marginTop:14}}>
+      <div style={{fontWeight:700,fontSize:13,marginBottom:6}}>{t("kd_events")}</div>
+      {d.events.map(([m,k])=>(<div key={k} className="muted" style={{fontSize:12.5}}>— {m}: {t(k)}</div>))}
+    </div>:null}
+    <div style={{display:"flex",justifyContent:"flex-end",marginTop:14}}>
+      <button className="btn secondary" onClick={onClose}>{t("rel_close")}</button>
+    </div>
+  </Modal>);
+}
+Object.assign(I18N.en,{ viewTrend:"View trend", kd_trend:"12-month trend", kd_drill:"By income bracket", kd_events:"Key events", kd_noChart:"Chart unavailable (offline)", ev_fmlAct:"Formula update activated", ev_rebalance:"Rebalancing applied", ev_alert:"Budget alert at 73%", wf_runHint:"Run What-if", al_showTrace:"Show trace", al_vsPrev:"vs last month",
+  tr_data:"GOSI income ingested · completeness 96.2%", tr_opt:"Applied HBR ≤ 38% · Fairness Gap ≥ 1.0 · optimal rate 2.4%", tr_type:"Compared 5 support types · selected best by HBR" });
+Object.assign(I18N.zh,{ viewTrend:"查看趋势", kd_trend:"12 个月趋势", kd_drill:"按收入档", kd_events:"关键事件", kd_noChart:"图表不可用(离线)", ev_fmlAct:"公式更新已激活", ev_rebalance:"已执行再平衡", ev_alert:"预算预警 73%", wf_runHint:"跑 What-if", al_showTrace:"展示链路", al_vsPrev:"环比上月",
+  tr_data:"已接入 GOSI 收入 · 完整度 96.2%", tr_opt:"应用 HBR ≤ 38% · Fairness Gap ≥ 1.0 · 最优利率 2.4%", tr_type:"比较 5 种支援类型 · 按 HBR 选最优" });
+Object.assign(I18N.ar,{ viewTrend:"عرض الاتجاه", kd_trend:"اتجاه ١٢ شهراً", kd_drill:"حسب شريحة الدخل", kd_events:"أحداث رئيسية", kd_noChart:"الرسم غير متاح (دون اتصال)", ev_fmlAct:"تم تفعيل تحديث الصيغة", ev_rebalance:"تم تطبيق إعادة التوازن", ev_alert:"تنبيه ميزانية عند ٧٣٪", wf_runHint:"تشغيل What-if", al_showTrace:"عرض المسار", al_vsPrev:"مقارنة بالشهر الماضي",
+  tr_data:"تم استيعاب دخل التأمينات · الاكتمال ٩٦٫٢٪", tr_opt:"تطبيق HBR ≤ ٣٨٪ · فجوة العدالة ≥ ١٫٠ · معدل أمثل ٢٫٤٪", tr_type:"مقارنة ٥ أنواع دعم · اختيار الأفضل حسب HBR" });
+
+/* ===== Mega KPI visualisations (inline SVG, no chart dep) ===== */
+function arcPts(cx,cy,r,a0,a1,n){ const p=[]; for(let i=0;i<=n;i++){ const a=(a0+(a1-a0)*i/n)*Math.PI/180; p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy-r*Math.sin(a)).toFixed(1)); } return p.join(" "); }
+function RadialGauge({value,target,max,unit,color}){
+  const frac=Math.max(0,Math.min(1,value/max)); const r=44,cx=56,cy=52;
+  const ta=(180-180*(target/max))*Math.PI/180;
+  return (<svg viewBox="0 0 112 60" width="100%" height="72">
+    <polyline points={arcPts(cx,cy,r,180,0,30)} fill="none" stroke="#e6ece9" strokeWidth="9" strokeLinecap="round"/>
+    <polyline points={arcPts(cx,cy,r,180,180-180*frac,30)} fill="none" stroke={color||"var(--green)"} strokeWidth="9" strokeLinecap="round"/>
+    <line x1={cx+(r-8)*Math.cos(ta)} y1={cy-(r-8)*Math.sin(ta)} x2={cx+(r+6)*Math.cos(ta)} y2={cy-(r+6)*Math.sin(ta)} stroke="#085D3A" strokeWidth="2"/>
+    <text x={cx} y={cy-4} textAnchor="middle" fontSize="17" fontWeight="800" fill="#16211c">{value}{unit}</text>
+  </svg>);
+}
+function MiniArea({series,thr,min,max,color}){
+  const W=120,H=54,mn=min??Math.min(...series)-1,mx=max??Math.max(...series)+1;
+  const xy=series.map((v,i)=>[(i/(series.length-1))*W,H-((v-mn)/(mx-mn))*H]);
+  const line="M"+xy.map(p=>p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" L");
+  const ty=thr!=null?H-((thr-mn)/(mx-mn))*H:null;
+  return (<svg viewBox={"0 0 "+W+" "+H} width="100%" height="60" preserveAspectRatio="none">
+    <path d={line+" L"+W+" "+H+" L0 "+H+" Z"} fill="rgba(27,131,84,.12)"/>
+    <path d={line} fill="none" stroke={color||"var(--green)"} strokeWidth="2"/>
+    {ty!=null?<line x1="0" y1={ty} x2={W} y2={ty} stroke="#b3261e" strokeDasharray="4 3" strokeWidth="1.2"/>:null}
+  </svg>);
+}
+function MiniBars({data,thr}){
+  const mx=Math.max(...data.map(d=>d[1]),thr||0)*1.1;
+  return (<div style={{display:"flex",alignItems:"flex-end",gap:6,height:60}}>
+    {data.map(([n,v],i)=>{ const c=v>=(thr||1)?"var(--green)":v>=0.9?"var(--amber)":"var(--danger)";
+      return <div key={i} title={n+": "+v} style={{flex:1,height:Math.max(4,v/mx*100)+"%",background:c,borderRadius:"3px 3px 0 0"}}/>;})}
+  </div>);
+}
+function StackedBar({segments,marks,total}){
+  return (<div style={{paddingTop:6}}>
+    <div style={{position:"relative",height:18,borderRadius:9,overflow:"hidden",background:"#eef2ef",display:"flex"}}>
+      {segments.map((s,i)=><span key={i} style={{width:(s.v/total*100)+"%",background:s.c}}/>)}
+      {marks.map((m,i)=><span key={"m"+i} style={{position:"absolute",insetInlineStart:m+"%",top:-3,width:2,height:24,background:m>=90?"#b3261e":"#9a6b00"}}/>)}
+    </div>
+  </div>);
+}
+function MegaKpi({title,value,delta,children,onClick}){
+  const {t}=useStore();
+  const dcol=delta&&delta[0]==="▲"?"var(--green)":delta&&delta[0]==="▼"?"var(--amber)":"var(--muted)";
+  return (<div className={"mega-kpi"+(onClick?" kpi-click":"")} onClick={onClick}>
+    <div className="mk-title">{title}</div>
+    <div className="mk-viz">{children}</div>
+    <div className="mk-foot">{value?<span className="mk-val">{value}</span>:<span/>}{delta?<span className="mk-delta" style={{color:dcol}}>{delta}</span>:null}</div>
+    {onClick?<div className="kpi-more">{t("viewTrend")} ↗</div>:null}
+  </div>);
+}
+Object.assign(I18N.en,{ kpi_ownership:"Home Ownership", dl_title:"Data lineage & gate", dl_go:"GO — ready for downstream", dl_hold:"HOLD — completeness below 90%", dl_opt:"Optimization", dl_fc:"Forecast", dl_track:"Tracking" });
+Object.assign(I18N.zh,{ kpi_ownership:"住房拥有率", dl_title:"数据血缘与门控", dl_go:"GO —— 可供下游使用", dl_hold:"HOLD —— 完整度低于 90%", dl_opt:"优化", dl_fc:"预测", dl_track:"追踪" });
+Object.assign(I18N.ar,{ kpi_ownership:"نسبة التملّك", dl_title:"سلالة البيانات والبوابة", dl_go:"GO — جاهز للمراحل التالية", dl_hold:"HOLD — الاكتمال دون ٩٠٪", dl_opt:"التحسين", dl_fc:"التنبؤ", dl_track:"التتبّع" });
 
 function App(){
   const [user,setUserState]=useState(null);
