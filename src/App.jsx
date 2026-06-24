@@ -147,21 +147,25 @@ function fgByRegion(globalFG){
 /* =========================================================================
    FORECAST (12-month spend projection with budget ceiling + alert)
    ========================================================================= */
+// Seasonal weights (Jan contract surge, mid-year / post-Ramadan dip, year-end push).
+const FC_SEASON=[1.18,1.06,0.99,0.96,0.92,0.86,0.80,0.78,0.95,1.06,1.12,1.20];
 function buildForecast(scn){
   const annualCeiling = BRD.phase3BudgetSAR / BRD.phase3Years; // 1.58B
   const monthlyCeiling = annualCeiling/12;
   const monthlyAvg = scn.spend/12;
-  const months=[];
-  let cum=0;
+  const months=[]; let cum=0;
   for(let m=1;m<=12;m++){
-    const seasonal = 1 + 0.12*Math.sin((m/12)*Math.PI*2 - 0.6); // mild seasonality
-    const projected = monthlyAvg*seasonal;
+    const projected = monthlyAvg*FC_SEASON[m-1];
     cum += projected;
-    months.push({ m, projected:Math.round(projected), cumulative:Math.round(cum),
-      ceiling:Math.round(monthlyCeiling*m) });
+    months.push({ m, projected:Math.round(projected), cumulative:Math.round(cum), ceiling:Math.round(monthlyCeiling*m) });
   }
+  // 3-month OLS-style continuation from the last quarter slope, with ±12% CI.
+  const slope=(months[11].projected-months[8].projected)/3;
+  const fc=[]; let last=months[11].projected, fcum=cum;
+  for(let k=1;k<=3;k++){ const proj=Math.round(last+slope*k); fcum+=proj;
+    fc.push({ m:12+k, proj, lo:Math.round(proj*0.88), hi:Math.round(proj*1.12), cumulative:Math.round(fcum), ceiling:Math.round(monthlyCeiling*(12+k)) }); }
   const alertMonth = months.find(x=>x.cumulative > monthlyCeiling*x.m*0.70);
-  return { months, annualCeiling, alertMonth: alertMonth? alertMonth.m : null };
+  return { months, fc, annualCeiling, monthlyCeiling, alertMonth: alertMonth? alertMonth.m : null };
 }
 
 /* =========================================================================
@@ -544,6 +548,9 @@ const NAV = {
 };
 // Release timestamps are in Saudi Arabia Standard Time (AST, UTC+3).
 const RELEASES=[
+  {ver:"v1.9", date:"2026-06-24 13:20",
+    en:["Subsidy Formula: live parameter controls (sliders/dropdown) + preview table + Activate/Rollback","Forecast: seasonal curve + 3-month OLS forecast with ±12% CI, 70/90 alert lines, Monthly/Cumulative toggle","Allocation: structured detail (How / Why / Impact), clearer vs-last-month, annotation"],
+    zh:["补贴公式:实时参数控件(滑块/下拉)+ 预览表 + 激活/回滚","预测:季节性曲线 + 3 月 OLS 预测(±12% 置信)、70/90 警戒线、月/累计切换","配分:结构化展开(如何算/为何/影响)、环比说清、加注释"]},
   {ver:"v1.8", date:"2026-06-24 11:58",
     en:["Dashboard KPIs as visuals: radial gauge, mini-area, multi-bar, stacked bar","Data Readiness: data-lineage strip with completeness gate (GO/HOLD)"],
     zh:["仪表盘 KPI 可视化:环形仪表、面积图、多档柱、堆叠条","数据就绪:数据血缘条 + 完整度门控(GO/HOLD)"]},
@@ -832,6 +839,7 @@ function Allocation(){
   const [open,setOpen]=useState(null);
   const [busy,setBusy]=useState(false); const [note,setNote]=useState(""); const [err,setErr]=useState(false);
   const [gates,setGates]=useState({a:false,b:false,c:false}); const allGates=gates.a&&gates.b&&gates.c;
+  const [annoOpen,setAnnoOpen]=useState(null);
   const a=allocation||{lastSync:"—",recalcAt:null,status:"draft",rejectNote:""};
   const data=BASELINE;
   function doRecalc(){ setBusy(true); setTimeout(()=>{ recalcAlloc&&recalcAlloc(); setBusy(false); },900); }
@@ -883,11 +891,17 @@ function Allocation(){
           </tr>
           {open===i&&<tr className="expand-row"><td colSpan={6}>
             <div style={{fontSize:12.5}}>
-              <strong>{t("impact")}:</strong> {bandLabel(t,r.key)} — {r.below?t("below10k"):t("above10k")} · {t("subsidy")} {moneyFull(r.subsidy)} · {t("share")} {(r.cShare*100).toFixed(1)}% · HBR {pct1(r.hbr)}.
-              <div className="muted" style={{marginTop:4}}>Within the approved policy matrix · contributes to Fairness Gap {BASELINE.FG.toFixed(2)}.</div>
+              <div className="alx-grid">
+                <div><div className="alx-h">{t("alx_how")}</div><div className="muted">{t("alx_howT")}</div></div>
+                <div><div className="alx-h">{t("alx_why")}</div><div className="muted">{bandLabel(t,r.key)} — {r.below?t("below10k"):t("above10k")} · {t("subsidy")} {moneyFull(r.subsidy)}</div></div>
+                <div><div className="alx-h">{t("alx_impact")}</div><div className="muted">HBR {pct1(r.hbr)} · {t("kpi_fairness")} {BASELINE.FG.toFixed(2)} · {t("share")} {(r.cShare*100).toFixed(1)}%</div></div>
+              </div>
+              {dv!=null&&<div style={{marginTop:8}}><b>{t("al_vsPrev")}:</b> <span className="mono" style={{color:dv>0?"var(--amber)":"var(--green)"}}>{(dv>0?"+":"")}⃁ {dv}</span> <span className="muted">— {t("alx_reason")}</span></div>}
               <div style={{display:"flex",gap:8,marginTop:8,flexWrap:"wrap"}}>
                 <button className="btn secondary sm" onClick={()=>setRoute&&setRoute("whatif")}>✦ {t("wf_runHint")}</button>
+                <button className="btn ghost sm" onClick={()=>setAnnoOpen(annoOpen===i?null:i)}>🏷️ {t("alx_annotate")}</button>
               </div>
+              {annoOpen===i&&<textarea className="input" placeholder={t("alx_annoPh")} style={{marginTop:8,minHeight:54,width:"100%"}}/>}
               <div className="trace">
                 <div style={{fontWeight:700,fontSize:12,marginBottom:6}}>▶ {t("al_showTrace")}</div>
                 <div className="trace-step"><span className="ts-dot"/><div><b>{t("agent_data")}</b> · L1<br/><span className="muted">{t("tr_data")}</span></div></div>
@@ -915,6 +929,10 @@ function ForecastFairness(){
     age: [["<30",0.74],["30–40",0.91],["40–50",1.05],[">50",1.16]].map(([n,f])=>({name:n,fg:f})),
   };
   const fgData=dimData[dim];
+  const [fcView,setFcView]=useState("monthly");
+  const mdata=[...fc.months.map(x=>({label:"M"+x.m, mProj:x.projected})), ...fc.fc.map(x=>({label:"M"+x.m, fProj:x.proj, lo:x.lo, hi:x.hi}))];
+  mdata[11].fProj=fc.months[11].projected;
+  const cdata=[...fc.months.map(x=>({label:"M"+x.m, cum:x.cumulative, ceiling:x.ceiling})), ...fc.fc.map(x=>({label:"M"+x.m, cum:x.cumulative, ceiling:x.ceiling}))];
   const C=RC; const ok=!!RC.ResponsiveContainer;
   const noChart=<div className="muted" style={{padding:20}}>Chart library unavailable (offline). Data is still computed correctly.</div>;
   return (<div className="fade">
@@ -927,17 +945,36 @@ function ForecastFairness(){
       </div>
       <span className="alert-pill">{t("alert")}</span>
     </div>}
-    <Section title={<span className="sect-right">{t("spendForecast")}<InfoTip text={t("fml_forecast")}/></span>} right={<AgentBadge name={t("agent_forecast")} lvl="L2"/>}>
-      <div style={{width:"100%",height:260}}>
-        {!ok? noChart :
+    <Section title={<span className="sect-right">{t("spendForecast")}<InfoTip text={t("fml_forecast")}/></span>} right={<span className="sect-right">
+      <button className={"btn sm "+(fcView==="monthly"?"":"secondary")} onClick={()=>setFcView("monthly")}>{t("fc_monthly")}</button>
+      <button className={"btn sm "+(fcView==="cum"?"":"secondary")} onClick={()=>setFcView("cum")}>{t("fc_cumulative")}</button>
+      <AgentBadge name={t("agent_forecast")} lvl="L2"/></span>}>
+      <div style={{width:"100%",height:280}}>
+        {!ok? noChart : fcView==="monthly"?
         <C.ResponsiveContainer>
-          <C.LineChart data={fc.months} margin={{top:8,right:16,left:8,bottom:4}}>
+          <C.LineChart data={mdata} margin={{top:8,right:16,left:8,bottom:4}}>
             <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
-            <C.XAxis dataKey="m" tick={{fontSize:11}}/>
-            <C.YAxis tickFormatter={abbr} tick={{fontSize:11}} width={48}/>
+            <C.XAxis dataKey="label" tick={{fontSize:10}}/>
+            <C.YAxis tickFormatter={abbr} tick={{fontSize:10}} width={48}/>
             <C.Tooltip formatter={(v)=>money(v)}/>
-            <C.Line type="monotone" dataKey="cumulative" stroke="#006C35" strokeWidth={2} dot={false} name={t("kpi_budget")}/>
-            <C.Line type="monotone" dataKey="ceiling" stroke="#b3261e" strokeDasharray="5 4" strokeWidth={2} dot={false} name={t("budgetCeiling")}/>
+            <C.ReferenceLine y={fc.monthlyCeiling*0.9} stroke="#b3261e" strokeDasharray="5 4" label={{value:"90%",fontSize:10,fill:"#b3261e"}}/>
+            <C.ReferenceLine y={fc.monthlyCeiling*0.7} stroke="#9a6b00" strokeDasharray="5 4" label={{value:"70%",fontSize:10,fill:"#9a6b00"}}/>
+            <C.Line type="monotone" dataKey="hi" stroke="#b9c4bd" strokeDasharray="2 3" strokeWidth={1} dot={false} name={t("fc_ci")} connectNulls/>
+            <C.Line type="monotone" dataKey="lo" stroke="#b9c4bd" strokeDasharray="2 3" strokeWidth={1} dot={false} connectNulls/>
+            <C.Line type="monotone" dataKey="mProj" stroke="#006C35" strokeWidth={2.4} dot={false} name={t("fc_actual")} connectNulls/>
+            <C.Line type="monotone" dataKey="fProj" stroke="#006C35" strokeDasharray="5 4" strokeWidth={2} dot={false} name={t("fc_forecast")} connectNulls/>
+          </C.LineChart>
+        </C.ResponsiveContainer> :
+        <C.ResponsiveContainer>
+          <C.LineChart data={cdata} margin={{top:8,right:16,left:8,bottom:4}}>
+            <C.CartesianGrid strokeDasharray="3 3" stroke="#eef2ef"/>
+            <C.XAxis dataKey="label" tick={{fontSize:10}}/>
+            <C.YAxis tickFormatter={abbr} tick={{fontSize:10}} width={48}/>
+            <C.Tooltip formatter={(v)=>money(v)}/>
+            <C.ReferenceLine y={fc.annualCeiling*0.9} stroke="#b3261e" strokeDasharray="5 4" label={{value:"90%",fontSize:10,fill:"#b3261e"}}/>
+            <C.ReferenceLine y={fc.annualCeiling*0.7} stroke="#9a6b00" strokeDasharray="5 4" label={{value:"70%",fontSize:10,fill:"#9a6b00"}}/>
+            <C.Line type="monotone" dataKey="cum" stroke="#006C35" strokeWidth={2.4} dot={false} name={t("kpi_budget")} connectNulls/>
+            <C.Line type="monotone" dataKey="ceiling" stroke="#b3261e" strokeDasharray="5 4" strokeWidth={2} dot={false} name={t("budgetCeiling")} connectNulls/>
           </C.LineChart>
         </C.ResponsiveContainer>}
       </div>
@@ -2039,14 +2076,43 @@ const FORMULAS=[
 ];
 function FormulaPage(){
   const {t,setRoute}=useStore();
+  const [ded,setDed]=useState(40); const [dur,setDur]=useState(20); const [ceil,setCeil]=useState(500000); const [rate,setRate]=useState(4);
+  const [act,setAct]=useState(null);
+  const dirty = ded!==40||dur!==20||ceil!==500000||rate!==4;
+  const bands=[3000,6000,9000,14000,22000];
+  const preview=bands.map(inc=>{ const maxH=Math.round(inc*ded/100); const sup=Math.max(0,Math.round(maxH*0.16*(1-rate/100*0.5))); return {inc,maxH,sup}; });
   return (<div className="fade">
     <PageHeader title={t("nav_formula")} sub={t("f_sub")} right={<AgentBadge name={t("agent_alloc")} lvl="L2"/>}/>
-    <div className="banner" style={{marginBottom:14}}>● {t("f_note")}</div>
-    <Section title={t("fv_title")} right={<button className="btn sm" onClick={()=>setRoute&&setRoute("whatif")}>✦ {t("fv_test")}</button>}>
-      <div className="banner" style={{marginBottom:12}}>● {t("fv_br07")}</div>
+    <div className="banner" style={{marginBottom:14}}>● {t("fv_br07")}</div>
+    <div className="cols-2">
+      <Section title={t("fp_params")}>
+        <div className="field"><label style={{display:"flex",justifyContent:"space-between"}}><span>{t("fp_ded")}</span><span className="mono">{ded}%</span></label>
+          <input className="range" type="range" min="10" max="60" value={ded} onChange={e=>{setDed(+e.target.value);setAct(null);}}/></div>
+        <div className="field"><label>{t("fp_dur")}</label>
+          <select className="input" value={dur} onChange={e=>{setDur(+e.target.value);setAct(null);}} style={{width:"auto"}}><option value={5}>5 {t("fp_yrs")}</option><option value={10}>10 {t("fp_yrs")}</option><option value={20}>20 {t("fp_yrs")}</option></select></div>
+        <div className="field"><label>{t("fp_ceil")} <span className="muted">(SAR)</span></label>
+          <input className="input mono" type="number" value={ceil} onChange={e=>{setCeil(+e.target.value);setAct(null);}}/></div>
+        <div className="field"><label style={{display:"flex",justifyContent:"space-between"}}><span>{t("fp_rate")}</span><span className="mono">{rate}%</span></label>
+          <input className="range" type="range" min="0" max="15" step="0.5" value={rate} onChange={e=>{setRate(+e.target.value);setAct(null);}}/></div>
+        <div className="set-row"><div><div style={{fontWeight:600,fontSize:13.5}}>{t("fp_income")}</div><div className="muted" style={{fontSize:11.5}}>{t("fp_lockedNote")}</div></div><span className="chip gray">🔒 ⃁ 2,726/mo</span></div>
+        <div style={{display:"flex",gap:8,marginTop:14,flexWrap:"wrap"}}>
+          <button className="btn secondary sm" onClick={()=>setRoute&&setRoute("whatif")}>✦ {t("fv_test")}</button>
+          <button className="btn sm" onClick={()=>setAct("on")} disabled={!dirty}>✓ {t("fp_activate")}</button>
+          <button className="btn ghost sm" onClick={()=>{setDed(40);setDur(20);setCeil(500000);setRate(4);setAct("rb");}}>↩ {t("fp_rollback")}</button>
+        </div>
+        {act==="on"&&<div className="banner" style={{marginTop:10}}>✓ {t("fp_activated")}</div>}
+        {act==="rb"&&<div className="banner" style={{marginTop:10}}>↩ {t("fp_rolledback")}</div>}
+      </Section>
+      <Section title={t("fp_preview")} sub={t("fp_previewNote")}>
+        <table className="tbl"><thead><tr><th className="right-num">{t("fp_inc")}</th><th className="right-num">{t("fp_maxH")}</th><th className="right-num">{t("fp_sup")}</th></tr></thead>
+          <tbody>{preview.map(p=>(<tr key={p.inc}><td className="right-num mono">⃁ {n0(p.inc)}</td><td className="right-num mono">⃁ {n0(p.maxH)}</td><td className="right-num mono" style={{fontWeight:700,color:"var(--green)"}}>⃁ {n0(p.sup)}/mo</td></tr>))}</tbody></table>
+        <div className="muted" style={{fontSize:11.5,marginTop:8}}>{dirty?("✎ "+t("fp_candidate")):("● "+t("fp_baseline"))}</div>
+      </Section>
+    </div>
+    <Section title={t("fv_title")}>
       <div className="rel-time">
-        <div className="rel-item cur"><span className="rel-dot"/><div className="rel-head"><b>FML-v1.1</b> <span className="muted" style={{fontSize:12}}>· {t("fv_candidate")}</span><span className="chip amber" style={{marginInlineStart:8}}>{t("fv_pending")}</span></div><ul className="rel-list"><li>{t("fv_v11")}</li></ul></div>
-        <div className="rel-item"><span className="rel-dot"/><div className="rel-head"><b>FML-v1.0</b> <span className="muted" style={{fontSize:12}}>· 2026-05-01</span><span className="chip" style={{marginInlineStart:8}}>{t("fv_active")}</span></div><ul className="rel-list"><li>{t("fv_v10")}</li></ul></div>
+        <div className={"rel-item"+(dirty?" cur":"")}><span className="rel-dot"/><div className="rel-head"><b>FML-v1.1</b> <span className="muted" style={{fontSize:12}}>· {t("fv_candidate")}</span><span className="chip amber" style={{marginInlineStart:8}}>{t("fv_pending")}</span></div><ul className="rel-list"><li>{t("fv_v11")}</li></ul></div>
+        <div className={"rel-item"+(dirty?"":" cur")}><span className="rel-dot"/><div className="rel-head"><b>FML-v1.0</b> <span className="muted" style={{fontSize:12}}>· 2026-05-01</span><span className="chip" style={{marginInlineStart:8}}>{t("fv_active")}</span></div><ul className="rel-list"><li>{t("fv_v10")}</li></ul></div>
       </div>
     </Section>
     {FORMULAS.map(f=>(<Section key={f.k} title={t(f.title)}>
@@ -2081,6 +2147,8 @@ Object.assign(I18N.en,{ nav_settings:"Settings", nav_formula:"Subsidy Formula",
   f_sav:"5-year savings", f_savEx:"Current-matrix spend − optimized scenario spend over the phase = SAR 1.37–3.4B",
   fv_title:"Formula versions", fv_test:"Test in What-if", fv_br07:"A modified formula must be validated in What-if before it can be activated.", fv_candidate:"Candidate", fv_pending:"Pending validation", fv_active:"Active", fv_v11:"Deduction rate 40% → 43% — needs What-if validation.", fv_v10:"Baseline formula in production.",
   al_gate1:"Spot-checked recommendations", al_gate2:"Compared vs last month", al_gate3:"Validated in What-if", al_gateHint:"Complete the checklist to enable submission",
+  fp_params:"Formula parameters", fp_ded:"Optimal deduction rate", fp_dur:"Support duration", fp_yrs:"yrs", fp_ceil:"Financing ceiling", fp_rate:"Reference interest rate", fp_income:"Income threshold (statutory)", fp_lockedNote:"Fixed — Ministry of Human Resources poverty line", fp_activate:"Activate v1.1", fp_rollback:"Rollback to v1.0", fp_activated:"Candidate activated (after What-if validation)", fp_rolledback:"Rolled back to v1.0", fp_preview:"Preview by income band", fp_previewNote:"Recomputed live as parameters change", fp_inc:"Income", fp_maxH:"Max housing cost", fp_sup:"Est. monthly support", fp_candidate:"Candidate (unsaved) — validate before activating", fp_baseline:"Matches active v1.0",
+  fc_monthly:"Monthly", fc_cumulative:"Cumulative", fc_actual:"Actual", fc_forecast:"Forecast (OLS)", fc_ci:"Confidence ±12%",
   ins_title:"AI insights", ins_sub:"Natural-language reading of the current state",
   ins_tenure_h:"Structural tenure shift", ins_tenure_t:"Rent inflation 8–10% far outpaces wage growth 4–5%, while purchase prices stay in low single digits.", ins_tenure_r:"Shift budget toward purchase subsidies to move citizens out of the volatile rental market.",
   ins_fiscal_h:"Fiscal runway", ins_fiscal_t:"Projected annual spend tracks to ~76%, leaving ~24% (SAR 384M) of budget headroom.", ins_fiscal_r:"Use this headroom for strategic reallocation toward high-need applicants.",
@@ -2097,6 +2165,8 @@ Object.assign(I18N.zh,{ nav_settings:"设置", nav_formula:"补贴公式",
   f_sav:"5 年节省", f_savEx:"现行矩阵支出 − 优化情景支出(整个阶段)= SAR 13.7–34 亿",
   fv_title:"公式版本", fv_test:"在 What-if 中测试", fv_br07:"修改后的公式必须先在 What-if 验证,才能激活。", fv_candidate:"候选", fv_pending:"待验证", fv_active:"生效中", fv_v11:"扣除率 40% → 43% —— 需 What-if 验证。", fv_v10:"生产环境基线公式。",
   al_gate1:"已抽查推荐", al_gate2:"已对比上月", al_gate3:"已在 What-if 验证", al_gateHint:"完成清单后方可提交",
+  fp_params:"公式参数", fp_ded:"最优扣除率", fp_dur:"支援期限", fp_yrs:"年", fp_ceil:"融资上限", fp_rate:"参考利率", fp_income:"收入门槛(法定)", fp_lockedNote:"固定 —— 人力资源部贫困线", fp_activate:"激活 v1.1", fp_rollback:"回滚到 v1.0", fp_activated:"候选已激活(经 What-if 验证后)", fp_rolledback:"已回滚到 v1.0", fp_preview:"按收入档预览", fp_previewNote:"参数变化时实时重算", fp_inc:"收入", fp_maxH:"最高住房成本", fp_sup:"预估月补", fp_candidate:"候选(未保存)—— 激活前需验证", fp_baseline:"与生效 v1.0 一致",
+  fc_monthly:"月度", fc_cumulative:"累计", fc_actual:"实际", fc_forecast:"预测(OLS)", fc_ci:"置信区间 ±12%",
   ins_title:"AI 洞察", ins_sub:"对当前态势的自然语言解读",
   ins_tenure_h:"结构性租购转变", ins_tenure_t:"租金通胀 8–10% 远超工资增长 4–5%,而购房价格仍处低个位数。", ins_tenure_r:"建议将预算转向购房补贴,把公民从动荡的租赁市场转移出来。",
   ins_fiscal_h:"财政空间", ins_fiscal_t:"预计年度支出约 76%,剩余约 24%(SAR 3.84 亿)预算空间。", ins_fiscal_r:"利用该空间向高需求申请者做战略再分配。",
@@ -2113,6 +2183,8 @@ Object.assign(I18N.ar,{ nav_settings:"الإعدادات", nav_formula:"صيغة
   f_sav:"وفورات ٥ سنوات", f_savEx:"إنفاق المصفوفة الحالية − إنفاق السيناريو الأمثل = ١٫٣٧–٣٫٤ مليار ريال",
   fv_title:"إصدارات الصيغة", fv_test:"اختبار في What-if", fv_br07:"يجب التحقق من الصيغة المعدّلة في What-if قبل تفعيلها.", fv_candidate:"مرشّح", fv_pending:"بانتظار التحقق", fv_active:"فعّال", fv_v11:"معدل الخصم ٤٠٪ → ٤٣٪ — يحتاج تحقق What-if.", fv_v10:"الصيغة الأساسية في الإنتاج.",
   al_gate1:"تم فحص التوصيات", al_gate2:"تمت المقارنة بالشهر الماضي", al_gate3:"تم التحقق في What-if", al_gateHint:"أكمل القائمة لتمكين الإرسال",
+  fp_params:"معاملات الصيغة", fp_ded:"معدل الخصم الأمثل", fp_dur:"مدة الدعم", fp_yrs:"سنة", fp_ceil:"سقف التمويل", fp_rate:"سعر الفائدة المرجعي", fp_income:"حدّ الدخل (نظامي)", fp_lockedNote:"ثابت — خط الفقر لوزارة الموارد البشرية", fp_activate:"تفعيل v1.1", fp_rollback:"التراجع إلى v1.0", fp_activated:"تم تفعيل المرشّح (بعد تحقق What-if)", fp_rolledback:"تم التراجع إلى v1.0", fp_preview:"معاينة حسب شريحة الدخل", fp_previewNote:"يُعاد حسابه فور تغيير المعاملات", fp_inc:"الدخل", fp_maxH:"أقصى تكلفة سكن", fp_sup:"الدعم الشهري التقديري", fp_candidate:"مرشّح (غير محفوظ) — تحقّق قبل التفعيل", fp_baseline:"مطابق للنسخة الفعّالة v1.0",
+  fc_monthly:"شهري", fc_cumulative:"تراكمي", fc_actual:"فعلي", fc_forecast:"تنبؤ (OLS)", fc_ci:"ثقة ±١٢٪",
   ins_title:"رؤى الذكاء الاصطناعي", ins_sub:"قراءة لغوية للوضع الحالي",
   ins_tenure_h:"تحوّل هيكلي في الحيازة", ins_tenure_t:"تضخم الإيجار ٨–١٠٪ يفوق نمو الأجور ٤–٥٪، بينما تبقى أسعار الشراء منخفضة.", ins_tenure_r:"تحويل الميزانية نحو دعم الشراء لإخراج المواطنين من سوق الإيجار المتقلب.",
   ins_fiscal_h:"المتسع المالي", ins_fiscal_t:"الإنفاق السنوي المتوقع نحو ٧٦٪، يتبقى نحو ٢٤٪ (٣٨٤ مليون ريال).", ins_fiscal_r:"استخدام هذا المتسع لإعادة توزيع استراتيجية نحو الأشد حاجة.",
@@ -2166,11 +2238,14 @@ function KpiDetailModal({kpi,onClose}){
   </Modal>);
 }
 Object.assign(I18N.en,{ viewTrend:"View trend", kd_trend:"12-month trend", kd_drill:"By income bracket", kd_events:"Key events", kd_noChart:"Chart unavailable (offline)", ev_fmlAct:"Formula update activated", ev_rebalance:"Rebalancing applied", ev_alert:"Budget alert at 73%", wf_runHint:"Run What-if", al_showTrace:"Show trace", al_vsPrev:"vs last month",
-  tr_data:"GOSI income ingested · completeness 96.2%", tr_opt:"Applied HBR ≤ 38% · Fairness Gap ≥ 1.0 · optimal rate 2.4%", tr_type:"Compared 5 support types · selected best by HBR" });
+  tr_data:"GOSI income ingested · completeness 96.2%", tr_opt:"Applied HBR ≤ 38% · Fairness Gap ≥ 1.0 · optimal rate 2.4%", tr_type:"Compared 5 support types · selected best by HBR",
+  alx_how:"How calculated", alx_howT:"GOSI income → deduction rate → max housing cost → optimal rate → monthly support", alx_why:"Why this amount", alx_impact:"Impact if adopted", alx_reason:"FML-v1.1 deduction rate +3pp", alx_annotate:"Annotate", alx_annoPh:"Note for the Business Owner — sent with the decision package" });
 Object.assign(I18N.zh,{ viewTrend:"查看趋势", kd_trend:"12 个月趋势", kd_drill:"按收入档", kd_events:"关键事件", kd_noChart:"图表不可用(离线)", ev_fmlAct:"公式更新已激活", ev_rebalance:"已执行再平衡", ev_alert:"预算预警 73%", wf_runHint:"跑 What-if", al_showTrace:"展示链路", al_vsPrev:"环比上月",
-  tr_data:"已接入 GOSI 收入 · 完整度 96.2%", tr_opt:"应用 HBR ≤ 38% · Fairness Gap ≥ 1.0 · 最优利率 2.4%", tr_type:"比较 5 种支援类型 · 按 HBR 选最优" });
+  tr_data:"已接入 GOSI 收入 · 完整度 96.2%", tr_opt:"应用 HBR ≤ 38% · Fairness Gap ≥ 1.0 · 最优利率 2.4%", tr_type:"比较 5 种支援类型 · 按 HBR 选最优",
+  alx_how:"如何算出", alx_howT:"GOSI 收入 → 扣除率 → 最高住房成本 → 最优利率 → 月度支援", alx_why:"为何是此金额", alx_impact:"采纳后影响", alx_reason:"FML-v1.1 扣除率 +3pp", alx_annotate:"加注释", alx_annoPh:"给业务负责人的备注 —— 随决策包一并提交" });
 Object.assign(I18N.ar,{ viewTrend:"عرض الاتجاه", kd_trend:"اتجاه ١٢ شهراً", kd_drill:"حسب شريحة الدخل", kd_events:"أحداث رئيسية", kd_noChart:"الرسم غير متاح (دون اتصال)", ev_fmlAct:"تم تفعيل تحديث الصيغة", ev_rebalance:"تم تطبيق إعادة التوازن", ev_alert:"تنبيه ميزانية عند ٧٣٪", wf_runHint:"تشغيل What-if", al_showTrace:"عرض المسار", al_vsPrev:"مقارنة بالشهر الماضي",
-  tr_data:"تم استيعاب دخل التأمينات · الاكتمال ٩٦٫٢٪", tr_opt:"تطبيق HBR ≤ ٣٨٪ · فجوة العدالة ≥ ١٫٠ · معدل أمثل ٢٫٤٪", tr_type:"مقارنة ٥ أنواع دعم · اختيار الأفضل حسب HBR" });
+  tr_data:"تم استيعاب دخل التأمينات · الاكتمال ٩٦٫٢٪", tr_opt:"تطبيق HBR ≤ ٣٨٪ · فجوة العدالة ≥ ١٫٠ · معدل أمثل ٢٫٤٪", tr_type:"مقارنة ٥ أنواع دعم · اختيار الأفضل حسب HBR",
+  alx_how:"كيف حُسب", alx_howT:"دخل التأمينات → معدل الخصم → أقصى تكلفة سكن → المعدل الأمثل → الدعم الشهري", alx_why:"لماذا هذا المبلغ", alx_impact:"الأثر عند الاعتماد", alx_reason:"FML-v1.1 معدل الخصم +٣ نقاط", alx_annotate:"إضافة ملاحظة", alx_annoPh:"ملاحظة لمالك الأعمال — تُرسل مع حزمة القرار" });
 
 /* ===== Mega KPI visualisations (inline SVG, no chart dep) ===== */
 function arcPts(cx,cy,r,a0,a1,n){ const p=[]; for(let i=0;i<=n;i++){ const a=(a0+(a1-a0)*i/n)*Math.PI/180; p.push((cx+r*Math.cos(a)).toFixed(1)+","+(cy-r*Math.sin(a)).toFixed(1)); } return p.join(" "); }
